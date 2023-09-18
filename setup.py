@@ -9,10 +9,9 @@ setup(
     author='Konstantinos Maravegias',
     author_email='kwstas.maras@gmail.com',
     packages=find_packages(),
-    #scripts=['bin/stowe-towels.py','bin/wash-towels.py'],
-    url='http://pypi.python.org/pypi/TowelStuff/',
+    url='http://pypi.python.org/pypi/BambooTools/',
     license='MIT',
-    description='Useful towel-related stuff.',
+    description='Useful Bamboo stuff.',
     long_description=long_description,
     install_requires=[
         "pandas >= 1.5.3"
