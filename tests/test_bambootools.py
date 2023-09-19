@@ -29,14 +29,17 @@ def make_dataset():
         df.loc[null_indices, col] = np.nan
     return df
 
+
 def test_init(make_dataset):
-    assert make_dataset.equals(make_dataset.bbt.pandas_obj), "Expected equal dataframe."
+    assert make_dataset.equals(make_dataset.bbt.pandas_obj), "Expected equal dataframe."\
+        
     
 def test_completeness(make_dataset):
     result = make_dataset.bbt.completeness()
     assert result.shape == (5, 2), "Wrong table dimensions."
     assert result['count'].max() <= make_dataset.shape[0], "Max value of non missing cannot exceed total number of records."
     assert result['perc'].max() <= 1.0, "Max value of perc cannot exceed 1."
+    
     
 def test_completeness_per_group(make_dataset):
     result = make_dataset.bbt.completeness(by=['animal'])

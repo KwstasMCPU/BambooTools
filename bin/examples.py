@@ -24,6 +24,8 @@ df = pd.DataFrame({
 for col, n_nulls in zip(['weight', 'tail length', 'name'], [3, 5, 1]):
     null_indices = np.random.choice(df.index, n_nulls, replace=False)
     df.loc[null_indices, col] = np.nan
-    
-    
+
+
 print(df.bbt.completeness(by=['animal']))
+print(df.bbt.above(column='weight', thresh=30))
+print(df.bbt.below(column='weight', thresh=30))
