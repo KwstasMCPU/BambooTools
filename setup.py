@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages
 
-with open("README.txt", 'r') as f:
-    long_description = f.read()
+long_description = ("README.md").read_text()
 
 setup(
     name='BambooTools',
@@ -9,11 +8,11 @@ setup(
     author='Konstantinos Maravegias',
     author_email='kwstas.maras@gmail.com',
     packages=find_packages(),
-    scripts=['bin/examples.py'],
     url='http://pypi.python.org/pypi/BambooTools/',
     license='MIT',
     description='Useful Bamboo stuff.',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     install_requires=[
         "pandas >= 1.5.3"
     ],

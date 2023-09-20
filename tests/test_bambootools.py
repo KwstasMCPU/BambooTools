@@ -32,6 +32,7 @@ def make_dataset():
         df.loc[null_indices, col] = np.nan
     return df
 
+
 # tests for BambooToolsDfAccessor
 def test_init_dataframe(make_dataset):
     assert make_dataset.equals(make_dataset.bbt.pandas_obj), (
@@ -52,6 +53,7 @@ def test_completeness_per_group(make_dataset):
     assert result.shape == (3, 8), "Wrong table dimensions."
     assert result['weight']['perc'].max() <= 1.0, (
         "Max value of perc cannot exceed 1.")
+
 
 # tests for BambooToolsSeriesAccessor
 def test_init_series(make_dataset):
