@@ -27,5 +27,5 @@ for col, n_nulls in zip(['weight', 'tail length', 'name'], [3, 5, 1]):
 
 
 print(df.bbt.completeness(by=['animal']))
-print(df.bbt.above(column='weight', thresh=30))
-print(df.bbt.below(column='weight', thresh=30))
+print(df['weight'].bbt.above(thresh=30))
+print(df['weight'].bbt.below(thresh=30))

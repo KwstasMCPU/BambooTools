@@ -7,7 +7,7 @@ from typing import List
 
 
 @pd.api.extensions.register_dataframe_accessor("bbt")
-class BambooToolsAccessor:
+class BambooToolsDfAccessor:
     def __init__(self, pandas_obj) -> None:
         self._validate(pandas_obj)
         self._obj = pandas_obj
@@ -49,29 +49,44 @@ class BambooToolsAccessor:
 
         return _df
 
+    
+@pd.api.extensions.register_series_accessor("bbt")
+class BambooToolsSeriesAccessor:
+    def __init__(self, series_obj) -> None:
+        self._validate(series_obj)
+        self._obj = series_obj
+
+    @property
+    def series_obj(self):
+        return self._obj
+    
+    @staticmethod    
+    def _validate(obj):
+        # verify this is a pandas Series
+        if not isinstance(obj, pd.Series):
+            raise AttributeError("Must be a pandas Series")
+        
     def above(self,
-              column: str,
-              thresh: float,
-              dropna: bool = False
-              ):
+            thresh: float,
+            dropna: bool = False
+            ):
         if dropna:
-            values_above = self._obj[column] > thresh
+            values_above = self._obj > thresh
         else:
-            values_above = self._obj[column].dropna() > thresh
+            values_above = self._obj.dropna() > thresh
         count = values_above.sum()
         perc = values_above.sum() / len(values_above)
 
         return count, perc
 
     def below(self,
-              column: str,
               thresh: float,
               dropna: bool = False
               ):
         if dropna:
-            values_above = self._obj[column] < thresh
+            values_above = self._obj < thresh
         else:
-            values_above = self._obj[column].dropna() < thresh
+            values_above = self._obj.dropna() < thresh
         count = values_above.sum()
         perc = values_above.sum() / len(values_above)
 
