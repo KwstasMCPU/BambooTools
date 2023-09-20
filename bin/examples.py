@@ -24,6 +24,15 @@ df = pd.DataFrame({
 for col, n_nulls in zip(['weight', 'tail length', 'name'], [3, 5, 1]):
     null_indices = np.random.choice(df.index, n_nulls, replace=False)
     df.loc[null_indices, col] = np.nan
-    
-    
+ 
+# get dataset's completeness for each column
+print(df.bbt.completeness())
+
+# get dataset's completeness per group
 print(df.bbt.completeness(by=['animal']))
+
+# find how many values and their percentage which are above a threshold
+print(df['weight'].bbt.above(thresh=30))
+
+# find how many values and their percentage which are below a threshold
+print(df['weight'].bbt.below(thresh=30))
