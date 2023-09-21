@@ -25,8 +25,8 @@ import numpy as np
 
 >>> df = pd.DataFrame({'Animal': ['Falcon', 'Falcon',
 ...                              'Parrot', 'Parrot', 
-...                                 'Lama', 'Falcon'],
-...                  'Max Speed': [380., 370., 24., 26., np.nan]})
+...                               'Lama', 'Falcon'],
+...                  'Max Speed': [380., 370., 24., 26., np.nan, np.nan]})
 
 # check the completeness of the dataset per column
 >>> df.bbt.completeness()
