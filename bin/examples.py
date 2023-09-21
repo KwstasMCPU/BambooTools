@@ -36,3 +36,7 @@ print(df['weight'].bbt.above(thresh=30))
 
 # find how many values and their percentage which are below a threshold
 print(df['weight'].bbt.below(thresh=30))
+
+print(df)
+# outliers summary
+print(df.bbt.outlier_summary(remover='percentiles'))
