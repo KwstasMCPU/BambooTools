@@ -16,6 +16,8 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     install_requires=[
-        "pandas >= 1.5.3"
+        "pandas >= 1.5.3",
+        "pathlib",
     ],
+    python_requires='>=3.8'
 )
