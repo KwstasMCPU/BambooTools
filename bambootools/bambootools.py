@@ -63,17 +63,9 @@ class BambooToolsDfAccessor:
 
     def outlier_summary(self, remover: Literal['std', 'iqr', 'percentiles'],
                         std_n: float = 3.0, factor: float = 1.5,
-                        lower_thresh: float = 0.0, upper_thresh: float = 0.0
-                        ) -> None:
-        """Print an outlier summary.
-
-        Args:
-            remover (Literal[&#39;std&#39;, &#39;iqr&#39;, &#39;percentiles&#39;]): 
-            _description_
-            std_n (float, optional): _description_. Defaults to 3.0.
-            factor (float, optional): _description_. Defaults to 1.5.
-            lower_thresh (float, optional): _description_. Defaults to 0.0.
-            upper_thresh (float, optional): _description_. Defaults to 0.0.
+                        lower_thresh: float = 0.0, upper_thresh: float = 1.0,
+                        drop_non_numeric: bool = False) -> None:
+        """
         """
         if remover == 'std':
             lower_limit, upper_limit = self.outlier_detector_std(std_n)
@@ -83,33 +75,41 @@ class BambooToolsDfAccessor:
             lower_limit, upper_limit = self.outlier_detector_percentiles(
                                                                 lower_thresh,
                                                                 upper_thresh)
-
-        outliers_upper = self._obj[self._obj > upper_limit].notnull().sum()
-        outliers_lower = self._obj[self._obj < lower_limit].notnull().sum()
-        non_outliers = self._obj[(self._obj <= upper_limit)
-                                & (self._obj >= lower_limit)
-                                ].notnull().sum()
-        print('Identification method: {}'.format(remover))
-        print('---')
-        print('>>> Identified outliers: {:,}'.format(outliers_upper.sum() +
-                                                     outliers_lower.sum()
-                                                     )
-              )
-        print('>>> Non-outliers: {:,}'.format(non_outliers.sum()))
-        print('>>> Outlier%: {:.2%}'.format((outliers_upper.sum() + 
-                                             outliers_lower.sum()
-                                             ) / self._obj.notnull().sum().sum()
-                                            )
-              )
+        # do not show non numeric columns in the result   
+        if drop_non_numeric:
+            df = self._obj.select_dtypes(include='number').copy()
+        # do show non numeric columns in the result
+        else:
+            df = self._obj.copy()
+            
+        outliers_upper = df.gt(upper_limit, axis=1).sum()
+        outliers_lower = df.lt(lower_limit, axis=1).sum()
+        non_outliers = (df.le(upper_limit, axis=1) 
+                        & df.gt(lower_limit, axis=1)).sum()
+        
+        outliers_df = pd.concat([outliers_upper,
+                                 outliers_lower,
+                                 non_outliers
+                                 ], axis=1
+                                ).rename(columns={0: 'n_outliers_upper',
+                                                  1: 'n_outlier_lower',
+                                                  2: 'n_non_outliers'})
+        outliers_df['n_total_outliers'] = outliers_df.eval('n_outliers_upper + n_outlier_lower')
+        return outliers_df
 
     def outlier_detector_std(self, std_n: float = 3.0):
-        data_mean, data_std = self._obj.mean(), self._obj.std()
+        """
+        """
+        data_mean = self._obj.mean(numeric_only=True), 
+        data_std = self._obj.std(numeric_only=True)
         cut_off = data_std * std_n
         lower_limit = data_mean - cut_off
         upper_limit = data_mean + cut_off
         return lower_limit, upper_limit
 
     def outlier_detector_iqr(self, factor: float = 1.5):
+        """
+        """
         q25 = self._obj.quantile(0.25, numeric_only=True)
         q75 = self._obj.quantile(0.75, numeric_only=True)
         iqr = q75 - q25
@@ -119,6 +119,8 @@ class BambooToolsDfAccessor:
         return lower_limit, upper_limit
 
     def outlier_detector_percentiles(self, lower_thresh, upper_thresh):
+        """
+        """
         lower_limit = self._obj.quantile(lower_thresh, numeric_only=True)
         upper_limit = self._obj.quantile(upper_thresh, numeric_only=True)
         return lower_limit, upper_limit
