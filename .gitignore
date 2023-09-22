@@ -155,7 +155,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# exclude specific files
 docs/
+*.ipynb
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
