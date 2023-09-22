@@ -1,6 +1,7 @@
 from bambootools import bambootools
 import pandas as pd
 import numpy as np
+import seaborn as sns
 
 # Set a seed for reproducibility
 np.random.seed(0)
@@ -36,3 +37,13 @@ print(df['weight'].bbt.above(thresh=30))
 
 # find how many values and their percentage which are below a threshold
 print(df['weight'].bbt.below(thresh=30))
+
+# outliers summary
+penguins = sns.load_dataset("penguins")
+print(penguins.bbt.outlier_summary(remover='percentiles',
+                                   lower_thresh=0.05,
+                                   upper_thresh=0.95,
+                                   drop_non_numeric=True))
+
+# get outlier limits
+print(penguins.bbt.outlier_detector_percentiles(0.05, 0.95))

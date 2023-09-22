@@ -73,3 +73,8 @@ def test_below(make_dataset):
     result = make_dataset['weight'].bbt.below(thresh=30)
     assert isinstance(result, tuple), "Did not return as tuple."
     assert result[0] == 6, "Value counts should be 10."
+
+
+def test_outlier_summary(make_dataset):
+    result = make_dataset.bbt.outlier_summary(remover='std')
+    assert result.shape == (2, 4)
