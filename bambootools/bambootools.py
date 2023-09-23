@@ -80,7 +80,7 @@ class BambooToolsDfAccessor:
                     below or upper the 25%, 75% percentiles respectively.
                 - 'percentiles': Detects as outliers, every value being below
                 or upper the given percentiles.
-            * std_n (float, optional): The number of standard deviation to be
+            * std_n (float, optional): The number of standard deviations to be
                 used in the `std` method. Defaults to 3.0.
             * factor (float, optional): The factor of IQR to be used in the
                 `iqr` method. Defaults to 1.5.
@@ -126,7 +126,18 @@ class BambooToolsDfAccessor:
         return outliers_df
 
     def outlier_detector_std(self, std_n: float = 3.0) -> Tuple[float, float]:
-        """
+        """Returns the upper and lower boundaries which are used to class a
+        value as an outlier. The boundaries are caclulated as `std_n` times
+        away from the mean.
+        
+        Note: Not suitable for data which do not follow normal distribution.
+
+        Args:
+            std_n (float, optional): The number of standard deviations to be
+                used in the `std` method. Defaults to 3.0.
+
+        Returns:
+            Tuple[float, float]: The lower and ipper limit
         """
         data_mean = self._obj.mean(numeric_only=True)
         data_std = self._obj.std(numeric_only=True)
@@ -138,7 +149,16 @@ class BambooToolsDfAccessor:
         return lower_limit, upper_limit
 
     def outlier_detector_iqr(self, factor: float = 1.5) -> Tuple[float, float]:
-        """
+        """Returns the upper and lower boundaries which are used to class a
+        value as an outlier. The boundaries are defined as the points, which
+        are `factor` times the IQR below and above the Q1 and Q3 quartiles
+        respectively.
+        
+        Args:
+            std_n (float, factor): The multiplayer of the IQR. Defaults to 1.5.
+
+        Returns:
+            Tuple[float, float]: The lower and ipper limit
         """
         q25 = self._obj.quantile(0.25, numeric_only=True)
         q75 = self._obj.quantile(0.75, numeric_only=True)
@@ -150,7 +170,18 @@ class BambooToolsDfAccessor:
 
     def outlier_detector_percentiles(self, lower_thresh, upper_thresh
                                      ) -> Tuple[float, float]:
-        """
+        """Returns the upper and lower boundaries which are used to class a
+        value as an outlier. The boundaries are calculated as the returd values  
+        at the given `lower_thesh` and `upper_thresh` percentiles.
+        
+        Args:
+            * lower_thresh: Value between 0 <= q <= 1, the percentile to 
+                compute for the lower boundary value.
+            * upper_thresh: Value between 0 <= q <= 1, the percentile to
+                compute for the upper boundary value.
+            
+        Returns:
+            Tuple[float, float]: The lower and ipper limit
         """
         lower_limit = self._obj.quantile(lower_thresh, numeric_only=True)
         upper_limit = self._obj.quantile(upper_thresh, numeric_only=True)
