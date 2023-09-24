@@ -38,12 +38,13 @@ print(df['weight'].bbt.above(thresh=30))
 # find how many values and their percentage which are below a threshold
 print(df['weight'].bbt.below(thresh=30))
 
-# outliers summary
+# outlier boundaries per group
 penguins = sns.load_dataset("penguins")
-print(penguins.bbt.outlier_summary(remover='percentiles',
-                                   lower_thresh=0.05,
-                                   upper_thresh=0.95,
-                                   drop_non_numeric=True))
+print(penguins.bbt.outlier_bounds(method='iqr',
+                                  by=['sex', 'species'],
+                                  factor=1.5))
 
-# get outlier limits
-print(penguins.bbt.outlier_detector_percentiles(0.05, 0.95))
+# outliers summary
+print(penguins.bbt.outlier_summary(method='iqr',
+                                   by=['sex', 'species'],
+                                   factor=1))

@@ -2,10 +2,11 @@ import pytest
 from bambootools import bambootools
 import pandas as pd
 import numpy as np
+import seaborn as sns
 
 
 @pytest.fixture
-def make_dataset():
+def animals_dataset():
     # Set a seed for reproducibility
     np.random.seed(0)
 
@@ -32,49 +33,56 @@ def make_dataset():
         df.loc[null_indices, col] = np.nan
     return df
 
+@pytest.fixture
+def penguins_dataset():
+    return sns.load_dataset("penguins")
+
 
 # tests for BambooToolsDfAccessor
-def test_init_dataframe(make_dataset):
-    assert make_dataset.equals(make_dataset.bbt.pandas_obj), (
+def test_init_dataframe(animals_dataset):
+    assert animals_dataset.equals(animals_dataset.bbt.pandas_obj), (
         "Expected equal dataframe.")
 
 
-def test_completeness(make_dataset):
-    result = make_dataset.bbt.completeness()
+def test_completeness(animals_dataset):
+    result = animals_dataset.bbt.completeness()
     assert result.shape == (5, 2), "Wrong table dimensions."
-    assert result['count'].max() <= make_dataset.shape[0], (
+    assert result['count'].max() <= animals_dataset.shape[0], (
         "Max value of non missing cannot exceed total number of records.")
     assert result['perc'].max() <= 1.0, (
         "Max value of perc cannot exceed 1.")
 
 
-def test_completeness_per_group(make_dataset):
-    result = make_dataset.bbt.completeness(by=['animal'])
+def test_completeness_per_group(animals_dataset):
+    result = animals_dataset.bbt.completeness(by=['animal'])
     assert result.shape == (3, 8), "Wrong table dimensions."
     assert result['weight']['perc'].max() <= 1.0, (
         "Max value of perc cannot exceed 1.")
 
 
 # tests for BambooToolsSeriesAccessor
-def test_init_series(make_dataset):
-    assert make_dataset['weight'].equals(
-        make_dataset['weight'].bbt.series_obj), (
+def test_init_series(animals_dataset):
+    assert animals_dataset['weight'].equals(
+        animals_dataset['weight'].bbt.series_obj), (
         "Expected equal series."
     )
 
 
-def test_above(make_dataset):
-    result = make_dataset['weight'].bbt.above(thresh=30)
-    assert isinstance(result, tuple), "Did not return as tuple."
+def test_above(animals_dataset):
+    result = animals_dataset['weight'].bbt.above(thresh=30)
+    assert isinstance(result, tuple), "Did not return a tuple."
     assert result[0] == 10, "Value counts should be 10."
 
 
-def test_below(make_dataset):
-    result = make_dataset['weight'].bbt.below(thresh=30)
-    assert isinstance(result, tuple), "Did not return as tuple."
+def test_below(animals_dataset):
+    result = animals_dataset['weight'].bbt.below(thresh=30)
+    assert isinstance(result, tuple), "Did not return a tuple."
     assert result[0] == 6, "Value counts should be 10."
 
 
-def test_outlier_summary(make_dataset):
-    result = make_dataset.bbt.outlier_summary(remover='std')
-    assert result.shape == (2, 4)
+def test_outlier_summary(penguins_dataset):
+    result = penguins_dataset.bbt.outlier_summary(method='iqr',
+                                                  by=['sex', 'species']
+                                                  )
+    assert result.shape == (24, 2), "Shape should be (24, 2). sex*species."
+    assert result['lower'].sum() == 8, "Number of outliers should be 8."

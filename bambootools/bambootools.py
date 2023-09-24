@@ -4,6 +4,7 @@
 """
 import pandas as pd
 from typing import List, Tuple, Literal
+import numpy as np
 
 
 @pd.api.extensions.register_dataframe_accessor("bbt")
@@ -60,24 +61,25 @@ class BambooToolsDfAccessor:
 
         return _df
 
-    def outlier_summary(self, remover: Literal['std', 'iqr', 'percentiles'],
-                        std_n: float = 3.0, factor: float = 1.5,
-                        lower_thresh: float = 0.0, upper_thresh: float = 1.0,
-                        drop_non_numeric: bool = True
-                        ) -> pd.DataFrame:
-        """Returns an outlier summary of the given dataframe for every
-        numerical column.
+    def outlier_bounds(self, method: Literal['std', 'iqr', 'percentiles'],
+                       std_n: float = 3.0, factor: float = 1.5,
+                       lower_thresh: float = 0.0, upper_thresh: float = 1.0,
+                       by: List = None
+                       ) -> pd.DataFrame:
+        """Returns the outlier boundaries of the given dataframe for every
+        numerical column. Outlier boundaries are defined as the values for
+        which any other value above or below is considered as an outlier.
 
         Args:
-            * remover ({'std', 'iqr', 'percentiles'}): Which method to be used
-                to detect outliers
+            * method ({'std', 'iqr', 'percentiles'}): Which outlier method
+                to be used.
                 - 'std': Calculates the mean and standard deviation. A value
                 becomes an outlier if exceeds the mean more than `std_n`
                 standard deviations. Use if you assume that your data are
                 normally distributed.
                 - 'iqr': Calculates the IQR, then considers as an outlier
-                every value being `factor`*IQR
-                    below or upper the 25%, 75% percentiles respectively.
+                every value being `factor`*IQR below or upper the 25%, 75% 
+                percentiles respectively.
                 - 'percentiles': Detects as outliers, every value being below
                 or upper the given percentiles.
             * std_n (float, optional): The number of standard deviations to be
@@ -88,48 +90,137 @@ class BambooToolsDfAccessor:
                 to be used in the `percentiles` method. Defaults to 0.0.
             * upper_thresh (float, optional): The upper percentile threshold
                 to be used in the `percentiles` method. Defaults to 1.0.
-            * drop_non_numeric (bool, optional): To not show the non-numerical
-            columns of the dataset at the summary table. Defaults to True.
+            * by (List[str], optional): If the names of categorical columns are
+                given, then the boundaries are calculated per group.
+
+        Returns:
+            pd.DataFrame: A table of the lower and upper boundary values
+        """
+        _df = self.pandas_obj.copy()
+        # check if to group by per with any categorical column
+        if by:
+            # group by per categorical column
+            if not isinstance(by, list):
+                raise AttributeError("`by` arg must be a list of strings")
+            cols = _df.select_dtypes(include=np.number).columns
+            _df = _df.groupby(by)[cols]
+            # select and call outlier method:
+            if method == 'std':
+                bounds = _df.apply(lambda group: group.apply(
+                    self.outlier_detector_std, std_n=std_n)).unstack()
+            if method == 'iqr':
+                bounds = _df.apply(lambda group: group.apply(
+                    self.outlier_detector_iqr, factor=factor)).unstack()
+            if method == 'percentiles':
+                bounds = _df.apply(lambda group: group.apply(
+                    self.outlier_detector_percentiles,
+                    lower_thresh=lower_thresh,
+                    upper_thresh=upper_thresh
+                    )).unstack()
+            return bounds
+        
+        else:
+            # do not group by per any categorical column
+            # select and call outlier method:
+            _df = _df.select_dtypes(include=np.number)
+            if method == 'std':
+                bounds = self.outlier_detector_std(_df, std_n)
+            if method == 'iqr':
+                bounds = self.outlier_detector_iqr(_df, factor)
+            if method == 'percentiles':
+                bounds = self.outlier_detector_percentiles(_df,
+                                                           lower_thresh,
+                                                           upper_thresh
+                                                           )
+            return pd.DataFrame({'lower': bounds['lower'],
+                                 'upper': bounds['upper']
+                                 }
+                                )
+
+    def outlier_summary(self, method: Literal['std', 'iqr', 'percentiles'],
+                        std_n: float = 3.0, factor: float = 1.5,
+                        lower_thresh: float = 0.0, upper_thresh: float = 1.0,
+                        by: List = None
+                        ) -> pd.DataFrame:
+        """Returns an outlier summary table (counts of outliers) for upper and 
+        lower bounds. Utilises existing functions.
+
+        Args:
+            * method ({'std', 'iqr', 'percentiles'}): Which outlier method
+                to be used.
+                - 'std': Calculates the mean and standard deviation. A value
+                becomes an outlier if exceeds the mean more than `std_n`
+                standard deviations. Use if you assume that your data are
+                normally distributed.
+                - 'iqr': Calculates the IQR, then considers as an outlier
+                every value being `factor`*IQR below or upper the 25%, 75% 
+                percentiles respectively.
+                - 'percentiles': Detects as outliers, every value being below
+                or upper the given percentiles.
+            * std_n (float, optional): The number of standard deviations to be
+                used in the `std` method. Defaults to 3.0.
+            * factor (float, optional): The factor of IQR to be used in the
+                `iqr` method. Defaults to 1.5.
+            * lower_thresh (float, optional): The lower percentile threshold
+                to be used in the `percentiles` method. Defaults to 0.0.
+            * upper_thresh (float, optional): The upper percentile threshold
+                to be used in the `percentiles` method. Defaults to 1.0.
+            * by (List[str], optional): If the names of categorical columns are
+                given, then the boundaries are calculated per group.
 
         Returns:
             pd.DataFrame: The outlier summary table
         """
-        if remover == 'std':
-            lower_limit, upper_limit = self.outlier_detector_std(std_n)
-        if remover == 'iqr':
-            lower_limit, upper_limit = self.outlier_detector_iqr(factor)
-        if remover == 'percentiles':
-            lower_limit, upper_limit = self.outlier_detector_percentiles(
-                                                                lower_thresh,
-                                                                upper_thresh)
-        # do not show non numeric columns in the result
-        if drop_non_numeric:
-            df = self._obj.select_dtypes(include='number').copy()
-        # do show non numeric columns in the result
-        else:
-            df = self._obj.copy()
-        # detect outliers
-        outliers_lower = df.lt(lower_limit, axis=1).sum()
-        outliers_upper = df.gt(upper_limit, axis=1).sum()
-        non_outliers = (df.le(upper_limit, axis=1)
-                        & df.gt(lower_limit, axis=1)).sum()
-        # concat all the series into one dataframe
-        outliers_df = pd.concat([outliers_upper,
-                                 outliers_lower,
-                                 non_outliers
-                                 ], axis=1
-                                ).rename(columns={0: 'n_outliers_upper',
-                                                  1: 'n_outlier_lower',
-                                                  2: 'n_non_outliers'})
-        query = 'n_outliers_upper + n_outlier_lower'
-        outliers_df['n_total_outliers'] = outliers_df.eval(query)
-        return outliers_df
+        bounds = self.outlier_bounds(method, std_n, factor,
+                                     lower_thresh, upper_thresh, by)
+        outlier_counts = {}
+        _df = self.pandas_obj.copy()
+        cols = _df.select_dtypes(include=np.number).columns
+        if by:
+            # check for every category (group)
+            for group in bounds.index:
+                for col in cols:
+                    lower_bound = bounds.loc[group, (col, 'lower')]
+                    upper_bound = bounds.loc[group, (col, 'upper')]
+                    # Count the outliers below/above the lower/upper bounds
+                    lower_outliers = _df[((_df[by] == group).all(axis=1)
+                                          & (_df[col] < lower_bound))]
+                    upper_outliers = _df[((_df[by] == group).all(axis=1)
+                                          & (_df[col] > upper_bound))]
+                    # Store the counts in the dictionary
+                    outlier_counts[(group, col, 'lower')] = len(lower_outliers)
+                    outlier_counts[(group, col, 'upper')] = len(upper_outliers)
 
-    def outlier_detector_std(self, std_n: float = 3.0) -> Tuple[float, float]:
+            summary_tbl = pd.Series(outlier_counts).unstack()
+            return summary_tbl
+        else:
+            # detect outliers
+            lower_outliers = _df.lt(bounds['lower'], axis=1).sum()
+            upper_outliers = _df.gt(bounds['upper'], axis=1).sum()
+            non_outliers = (_df.le(bounds['upper'], axis=1)
+                            & _df.ge(bounds['lower'], axis=1)).sum()
+            # concat all the series into one dataframe
+            summary_tbl = pd.concat([upper_outliers,
+                                     lower_outliers,
+                                     non_outliers], axis=1
+                                    ).rename(columns={
+                                        0: 'n_outliers_upper',
+                                        1: 'n_outlier_lower',
+                                        2: 'n_non_outliers'
+                                        }
+                                             )
+            qry = 'n_outliers_upper + n_outlier_lower'
+            summary_tbl['n_total_outliers'] = summary_tbl.eval(qry)
+            return summary_tbl
+
+    def outlier_detector_std(self,
+                             _df,
+                             std_n: float = 3.0
+                             ) -> pd.Series:
         """Returns the upper and lower boundaries which are used to class a
         value as an outlier. The boundaries are caclulated as `std_n` times
         away from the mean.
-        
+
         Note: Not suitable for data which do not follow normal distribution.
 
         Args:
@@ -137,55 +228,56 @@ class BambooToolsDfAccessor:
                 used in the `std` method. Defaults to 3.0.
 
         Returns:
-            Tuple[float, float]: The lower and ipper limit
+            pd.Series: The lower and ipper limit
         """
-        data_mean = self._obj.mean(numeric_only=True)
-        data_std = self._obj.std(numeric_only=True)
+        data_mean = _df.mean(numeric_only=True)
+        data_std = _df.std(numeric_only=True)
         cut_off = data_std * std_n
-        print(type(cut_off))
-        print(type(data_mean))
-        lower_limit = data_mean - cut_off
-        upper_limit = data_mean + cut_off
-        return lower_limit, upper_limit
+        lower_bound = data_mean - cut_off
+        upper_bound = data_mean + cut_off
+        return pd.Series({'lower': lower_bound, 'upper': upper_bound})
 
-    def outlier_detector_iqr(self, factor: float = 1.5) -> Tuple[float, float]:
+    def outlier_detector_iqr(self,
+                             _df,
+                             factor: float = 1.5
+                             ) -> Tuple[float, float]:
         """Returns the upper and lower boundaries which are used to class a
         value as an outlier. The boundaries are defined as the points, which
         are `factor` times the IQR below and above the Q1 and Q3 quartiles
         respectively.
-        
+
         Args:
             std_n (float, factor): The multiplayer of the IQR. Defaults to 1.5.
 
         Returns:
-            Tuple[float, float]: The lower and ipper limit
+            pd.Series: The lower and upper bound
         """
-        q25 = self._obj.quantile(0.25, numeric_only=True)
-        q75 = self._obj.quantile(0.75, numeric_only=True)
+        q25 = _df.quantile(0.25)
+        q75 = _df.quantile(0.75)
         iqr = q75 - q25
         cut_off = iqr * factor
-        lower_limit = q25 - cut_off
-        upper_limit = q75 + cut_off
-        return lower_limit, upper_limit
+        lower_bound = q25 - cut_off
+        upper_bound = q75 + cut_off
+        return pd.Series({'lower': lower_bound, 'upper': upper_bound})
 
-    def outlier_detector_percentiles(self, lower_thresh, upper_thresh
+    def outlier_detector_percentiles(self, _df, lower_thresh, upper_thresh
                                      ) -> Tuple[float, float]:
         """Returns the upper and lower boundaries which are used to class a
         value as an outlier. The boundaries are calculated as the returd values  
         at the given `lower_thesh` and `upper_thresh` percentiles.
-        
+
         Args:
             * lower_thresh: Value between 0 <= q <= 1, the percentile to 
                 compute for the lower boundary value.
             * upper_thresh: Value between 0 <= q <= 1, the percentile to
                 compute for the upper boundary value.
-            
+           
         Returns:
-            Tuple[float, float]: The lower and ipper limit
+            pd.Series: The lower and upper bound
         """
-        lower_limit = self._obj.quantile(lower_thresh, numeric_only=True)
-        upper_limit = self._obj.quantile(upper_thresh, numeric_only=True)
-        return lower_limit, upper_limit
+        lower_bound = _df.quantile(lower_thresh)
+        upper_bound = _df.quantile(upper_thresh)
+        return pd.Series({'lower': lower_bound, 'upper': upper_bound})
 
 
 @pd.api.extensions.register_series_accessor("bbt")
