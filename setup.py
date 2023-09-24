@@ -6,11 +6,11 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='BambooTools',
-    version='0.1.0',
+    version='0.2.0-alpha',
     author='Konstantinos Maravegias',
     author_email='kwstas.maras@gmail.com',
     packages=find_packages(),
-    url='http://pypi.python.org/pypi/BambooTools/',
+    url='https://github.com/KwstasMCPU/BambooTools',
     license='MIT',
     description='Useful Bamboo stuff.',
     long_description=long_description,
@@ -18,6 +18,10 @@ setup(
     install_requires=[
         "pandas >= 1.5.3",
         "pathlib",
-    ],
+        ],
+    classifiers=["Development Status :: 3 - Alpha",
+                 "Programming Language :: Python :: 3",
+                 "License :: OSI Approved :: MIT License"
+                 ],
     python_requires='>=3.8'
 )
