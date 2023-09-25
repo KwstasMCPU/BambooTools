@@ -47,47 +47,71 @@ Parrot  1.000000     2
 ```
 ## Outlier summary
 
+`outlier_summary()` retuns a summary of the outliers found in the dataset, based on a specific method (eg. IQR).
+It returns th number of outliers below and above the boundaries calculated by the specific method.
 ```python
 >>> penguins = sns.load_dataset("penguins")
 # identify outliers using the  Inter Quartile Range approach
 >>> print(penguins.bbt.outlier_summary('iqr', factor=1))
+```
+|                   | n_outliers_upper | n_outlier_lower | n_non_outliers | n_total_outliers |
+|-------------------|------------------|-----------------|----------------|------------------|
+| bill_depth_mm     | 0                | 0               | 342            | 0                |
+| bill_length_mm    | 2                | 0               | 340            | 2                |
+| body_mass_g       | 4                | 0               | 338            | 4                |
+| flipper_length_mm | 0                | 0               | 342            | 0                |
 
-                    n_outliers_upper  n_outlier_lower  n_non_outliers  n_total_outliers
-bill_depth_mm                     0                0             342                 0
-bill_length_mm                    2                0             340                 2
-body_mass_g                       4                0             338                 4
-flipper_length_mm                 0                0             342                 0
+You can also get the summary per group:
 
+```python
 # outliers per category
 >>> print(penguins.bbt.outlier_summary(method='iqr', by=['sex', 'species'], factor=1))
-
-		                                lower	upper
-('Female', 'Adelie')	bill_depth_mm	    1	1
-('Female', 'Adelie')	bill_length_mm	    1	1
-('Female', 'Adelie')	body_mass_g	        0	0
-('Female', 'Adelie')	flipper_length_mm	5	3
-('Female', 'Chinstrap')	bill_depth_mm	    0	1
-('Female', 'Chinstrap')	bill_length_mm	    5	6
-('Female', 'Chinstrap')	body_mass_g	        2	1
-('Female', 'Chinstrap')	flipper_length_mm	1	0
-('Female', 'Gentoo')	bill_depth_mm	    0	1
-('Female', 'Gentoo')	bill_length_mm	    0	1
-('Female', 'Gentoo')	body_mass_g	        1	0
-('Female', 'Gentoo')	flipper_length_mm	1	1
-('Male', 'Adelie')	bill_depth_mm	        3	6
-('Male', 'Adelie')	bill_length_mm	        3	5
-('Male', 'Adelie')	body_mass_g	            0	0
-('Male', 'Adelie')	flipper_length_mm	    4	2
-('Male', 'Chinstrap')	bill_depth_mm	    1	0
-('Male', 'Chinstrap')	bill_length_mm	    0	2
-('Male', 'Chinstrap')	body_mass_g	        2	3
-('Male', 'Chinstrap')	flipper_length_mm	1	1
-('Male', 'Gentoo')	bill_depth_mm   	    2	3
-('Male', 'Gentoo')	bill_length_mm	        5	5
-('Male', 'Gentoo')	body_mass_g	            1	1
-('Male', 'Gentoo')	flipper_length_mm	    2	0
 ```
+|                         |                   | lower | upper |
+|-------------------------|-------------------|-------|-------|
+| ('Female', 'Adelie')    | bill_depth_mm     | 1     | 1     |
+| ('Female', 'Adelie')    | bill_length_mm    | 1     | 1     |
+| ('Female', 'Adelie')    | body_mass_g       | 0     | 0     |
+| ('Female', 'Adelie')    | flipper_length_mm | 5     | 3     |
+| ('Female', 'Chinstrap') | bill_depth_mm     | 0     | 1     |
+| ('Female', 'Chinstrap') | bill_length_mm    | 5     | 6     |
+| ('Female', 'Chinstrap') | body_mass_g       | 2     | 1     |
+| ('Female', 'Chinstrap') | flipper_length_mm | 1     | 0     |
+| ('Female', 'Gentoo')    | bill_depth_mm     | 0     | 1     |
+| ('Female', 'Gentoo')    | bill_length_mm    | 0     | 1     |
+| ('Female', 'Gentoo')    | body_mass_g       | 1     | 0     |
+| ('Female', 'Gentoo')    | flipper_length_mm | 1     | 1     |
+| ('Male', 'Adelie')      | bill_depth_mm     | 3     | 6     |
+| ('Male', 'Adelie')      | bill_length_mm    | 3     | 5     |
+| ('Male', 'Adelie')      | body_mass_g       | 0     | 0     |
+| ('Male', 'Adelie')      | flipper_length_mm | 4     | 2     |
+| ('Male', 'Chinstrap')   | bill_depth_mm     | 1     | 0     |
+| ('Male', 'Chinstrap')   | bill_length_mm    | 0     | 2     |
+| ('Male', 'Chinstrap')   | body_mass_g       | 2     | 3     |
+| ('Male', 'Chinstrap')   | flipper_length_mm | 1     | 1     |
+| ('Male', 'Gentoo')      | bill_depth_mm     | 2     | 3     |
+| ('Male', 'Gentoo')      | bill_length_mm    | 5     | 5     |
+| ('Male', 'Gentoo')      | body_mass_g       | 1     | 1     |
+| ('Male', 'Gentoo')      | flipper_length_mm | 2     | 0     |
 
+## Outlier boundaries
+
+`outlier_bounds()` returns the boundary values which any value below or above is considered an outlier:
+```python
+>>> print(penguins.bbt.outlier_bounds(method='iqr',
+                                  by=['sex', 'species'],
+                                  factor=1))
+```
+|            |               | bill_length_mm | bill_length_mm | bill_depth_mm | bill_depth_mm | flipper_length_mm | flipper_length_mm | body_mass_g | body_mass_g |
+|------------|---------------|----------------|----------------|---------------|---------------|-------------------|-------------------|-------------|-------------|
+|            |               | lower          | upper          | lower         | upper         | lower             | upper             | lower       | upper       |
+| **sex**    | **species**   |                |                |               |               |                   |                   |             |             |
+| **Female** | **Adelie**    | 33             | 41.7           | 15.7          | 19.6          | 179               | 197               | 2800        | 3925        |
+| **Female** | **Chinstrap** | 43.475         | 49.325         | 15.95         | 19.1          | 178.75            | 204.25            | 3031.25     | 4025        |
+| **Female** | **Gentoo**    | 40.825         | 49.9           | 13            | 15.4          | 205               | 220               | 4050        | 5287.5      |
+| **Male**   | **Adelie**    | 36.5           | 44             | 17.4          | 20.7          | 181               | 205               | 3300        | 4800        |
+| **Male**   | **Chinstrap** | 48.125         | 53.9           | 17.8          | 20.8          | 189               | 210               | 3362.5      | 4468.75     |
+| **Male**   | **Gentoo**    | 45.7           | 52.9           | 14.3          | 17            | 211               | 232               | 4900        | 6100        |
 # Contributing
 
 Contributions are welcome! Contribution guidelines are pending.
