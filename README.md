@@ -1,6 +1,8 @@
 # BambooTools
 
-BambooTools is a Python package that provides extensions of pandas functionalities.
+BambooTools is Python library designed to enhance your data analysis workflows. Built as an extension to the widely-used pandas library, BambooTools provides one liner methods for outlier detection and completeness summary in pandas datasets.
+
+With BambooTools, you can easily identify and handle outliers in your data, enabling more accurate analyses and predictions. The library also offers a completeness summary feature, which provides a quick and efficient way to assess the completeness of your dataset.
 
 ## Installation
 
@@ -20,39 +22,48 @@ pip install .
 
 ## Completeness summary
 
+`completeness()` retuns a completeness summary table, stating the percentage and count of complete (not NULL) values:
+
 ```python
 from bambootools import bambootools
 import pandas as pd
 import numpy as np
 
->>> df = pd.DataFrame({'Animal': ['Falcon', 'Falcon',
-...                              'Parrot', 'Parrot', 
-...                               'Lama', 'Falcon'],
-...                  'Max Speed': [380., 370., 24., 26., np.nan, np.nan]})
+df = pd.DataFrame({'Animal': ['Falcon', 'Falcon',
+                             'Parrot', 'Parrot',
+                             'Lama', 'Falcon'],
+                   'Max Speed': [380., 370., 
+                                 24., 26., 
+                                 np.nan, np.nan]
+                   })
 
 # check the completeness of the dataset per column
 >>> print(df.bbt.completeness())
-               perc  count
-Animal     1.000000      6
-Max Speed  0.666667      4
-
-# check the completeness of the datataset per category
->>> print(df.bbt.completeness(by=['Animal']))
-        Max Speed      
-            perc count
-Animal                
-Falcon  0.666667     2
-Lama    0.000000     0
-Parrot  1.000000     2
 ```
+|           | perc     | count |
+|-----------|----------|-------|
+| Animal    | 1        | 6     |
+| Max Speed | 0.666667 | 4     |
+
+Specifying a list of categorical columns would result the completeness per category:
+```python
+# check the completeness of the datataset per category
+print(df.bbt.completeness(by=['Animal']))
+```
+| Animal | Max Speed   |           |
+|--------|-------------|-----------|
+|        | perc        | count     |
+| Falcon | 0.666666667 | 2         |
+| Lama   | 0           | 0         |
+| Parrot | 1           | 2         |
 ## Outlier summary
 
-`outlier_summary()` retuns a summary of the outliers found in the dataset, based on a specific method (eg. IQR).
-It returns th number of outliers below and above the boundaries calculated by the specific method.
+`outlier_summary()` retuns a summary of the outliers found in the dataset based on a specific method (eg. IQR).
+It returns the number of outliers below and above the boundaries calculated by the specific method.
 ```python
->>> penguins = sns.load_dataset("penguins")
+penguins = sns.load_dataset("penguins")
 # identify outliers using the  Inter Quartile Range approach
->>> print(penguins.bbt.outlier_summary('iqr', factor=1))
+print(penguins.bbt.outlier_summary('iqr', factor=1))
 ```
 |                   | n_outliers_upper | n_outlier_lower | n_non_outliers | n_total_outliers |
 |-------------------|------------------|-----------------|----------------|------------------|
@@ -65,7 +76,7 @@ You can also get the summary per group:
 
 ```python
 # outliers per category
->>> print(penguins.bbt.outlier_summary(method='iqr', by=['sex', 'species'], factor=1))
+print(penguins.bbt.outlier_summary(method='iqr', by=['sex', 'species'], factor=1))
 ```
 |                         |                   | lower | upper |
 |-------------------------|-------------------|-------|-------|
@@ -98,7 +109,7 @@ You can also get the summary per group:
 
 `outlier_bounds()` returns the boundary values which any value below or above is considered an outlier:
 ```python
->>> print(penguins.bbt.outlier_bounds(method='iqr',
+print(penguins.bbt.outlier_bounds(method='iqr',
                                   by=['sex', 'species'],
                                   factor=1))
 ```

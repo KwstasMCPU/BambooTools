@@ -24,5 +24,6 @@ setup(
                  "Programming Language :: Python :: 3",
                  "License :: OSI Approved :: MIT License"
                  ],
+    keywords='pandas, pandas extensions, data analysis, data science',
     python_requires='>=3.8'
 )
