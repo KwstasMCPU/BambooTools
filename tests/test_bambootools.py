@@ -33,6 +33,7 @@ def animals_dataset():
         df.loc[null_indices, col] = np.nan
     return df
 
+
 @pytest.fixture
 def penguins_dataset():
     return sns.load_dataset("penguins")
@@ -46,7 +47,7 @@ def test_init_dataframe(animals_dataset):
 
 def test_completeness(animals_dataset):
     result = animals_dataset.bbt.completeness()
-    assert result.shape == (5, 2), "Wrong table dimensions."
+    assert result.shape == (5, 3), "Wrong table dimensions."
     assert result['count'].max() <= animals_dataset.shape[0], (
         "Max value of non missing cannot exceed total number of records.")
     assert result['perc'].max() <= 1.0, (
@@ -55,9 +56,28 @@ def test_completeness(animals_dataset):
 
 def test_completeness_per_group(animals_dataset):
     result = animals_dataset.bbt.completeness(by=['animal'])
-    assert result.shape == (3, 8), "Wrong table dimensions."
+    assert result.shape == (3, 12), "Wrong table dimensions."
     assert result['weight']['perc'].max() <= 1.0, (
         "Max value of perc cannot exceed 1.")
+    # test if the counts were calculated correctly
+    n_cats = animals_dataset['animal'].value_counts()['cat']
+    assert result['weight'].loc['cat', 'total'] == n_cats, (
+        "Total counts per category must equal the value counts."
+    )
+
+
+def test_outlier_summary(penguins_dataset):
+    result = penguins_dataset.bbt.outlier_summary(method='iqr',
+                                                  by=['sex', 'species']
+                                                  )
+    assert result.shape == (24, 5), "Shape should be (24, 5). sex*species."
+    assert result['n_outliers_lower'].sum() == 8, "N of outliers should be 8."
+    # test if the counts were calculated correctly
+    n_penguins_grp = penguins_dataset.groupby(['sex', 'species']).size()
+    assert n_penguins_grp['Female', 'Adelie'] == result['total_records'].\
+        loc[('Female', 'Adelie'), 'bill_depth_mm'], (
+            "Total counts per category must equal the original data counts."
+        )
 
 
 # tests for BambooToolsSeriesAccessor
@@ -78,11 +98,3 @@ def test_below(animals_dataset):
     result = animals_dataset['weight'].bbt.below(thresh=30)
     assert isinstance(result, tuple), "Did not return a tuple."
     assert result[0] == 6, "Value counts should be 10."
-
-
-def test_outlier_summary(penguins_dataset):
-    result = penguins_dataset.bbt.outlier_summary(method='iqr',
-                                                  by=['sex', 'species']
-                                                  )
-    assert result.shape == (24, 2), "Shape should be (24, 2). sex*species."
-    assert result['lower'].sum() == 8, "Number of outliers should be 8."

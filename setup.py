@@ -22,6 +22,8 @@ setup(
         },
     classifiers=["Development Status :: 3 - Alpha",
                  "Programming Language :: Python :: 3",
+                 "Intended Audience :: Developers",
+                 "Intended Audience :: Science/Research",
                  "License :: OSI Approved :: MIT License"
                  ],
     keywords='pandas, pandas extensions, data analysis, data science',
