@@ -38,7 +38,7 @@ df = pd.DataFrame({'Animal': ['Falcon', 'Falcon',
                    })
 
 # check the completeness of the dataset per column
->>> print(df.bbt.completeness())
+print(df.bbt.completeness())
 ```
 |           | perc     | count |
 |-----------|----------|-------|
