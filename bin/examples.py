@@ -25,7 +25,7 @@ df = pd.DataFrame({
 for col, n_nulls in zip(['weight', 'tail length', 'name'], [3, 5, 1]):
     null_indices = np.random.choice(df.index, n_nulls, replace=False)
     df.loc[null_indices, col] = np.nan
- 
+
 # get dataset's completeness for each column
 print(df.bbt.completeness())
 
@@ -44,7 +44,7 @@ print(penguins.bbt.outlier_bounds(method='iqr',
                                   by=['sex', 'species'],
                                   factor=1.5))
 
-# outliers summary
+# outliers summary per group
 print(penguins.bbt.outlier_summary(method='iqr',
                                    by=['sex', 'species'],
                                    factor=1))

@@ -49,13 +49,15 @@ class BambooToolsDfAccessor:
                                 1: 'count'
                                 }
                        )
+            _df['total'] = self._obj.shape[0]
         else:
             if not isinstance(by, List):
                 raise AttributeError("`by` arg must be a list of strings")
 
             _df = self._obj.groupby(by, dropna=False).\
                 agg([('perc', lambda x: x.notnull().sum()/x.shape[0]),
-                     ('count', lambda x: x.notnull().sum())
+                     ('count', lambda x: x.notnull().sum()),
+                     ('total', 'size')
                      ]
                     )
 
@@ -177,7 +179,7 @@ class BambooToolsDfAccessor:
         _df = self.pandas_obj.copy()
         cols = _df.select_dtypes(include=np.number).columns
         if by:
-            # check for every category (group)
+            # --> groupby summary table (group)
             for group in bounds.index:
                 for col in cols:
                     lower_bound = bounds.loc[group, (col, 'lower')]
@@ -187,16 +189,28 @@ class BambooToolsDfAccessor:
                                           & (_df[col] < lower_bound))]
                     upper_outliers = _df[((_df[by] == group).all(axis=1)
                                           & (_df[col] > upper_bound))]
+                    # count the non outliers
+                    non_outliers = _df[((_df[by] == group).all(axis=1)
+                                        & (_df[col] <= upper_bound)
+                                        & (_df[col] >= lower_bound))]
                     # Store the counts in the dictionary
-                    outlier_counts[(group, col, 'lower')] = len(lower_outliers)
-                    outlier_counts[(group, col, 'upper')] = len(upper_outliers)
-
+                    outlier_counts[(group,
+                                    col,
+                                    'n_outliers_lower')] = len(lower_outliers)
+                    outlier_counts[(group,
+                                    col,
+                                    'n_outliers_upper')] = len(upper_outliers)
+                    outlier_counts[(group,
+                                    col,
+                                    'n_non_outliers')] = len(non_outliers)
+            # generate the summary table        
             summary_tbl = pd.Series(outlier_counts).unstack()
-            return summary_tbl
         else:
+            # --> non groupby summary table
             # detect outliers
             lower_outliers = _df.lt(bounds['lower'], axis=1).sum()
             upper_outliers = _df.gt(bounds['upper'], axis=1).sum()
+            # 
             non_outliers = (_df.le(bounds['upper'], axis=1)
                             & _df.ge(bounds['lower'], axis=1)).sum()
             # concat all the series into one dataframe
@@ -205,13 +219,16 @@ class BambooToolsDfAccessor:
                                      non_outliers], axis=1
                                     ).rename(columns={
                                         0: 'n_outliers_upper',
-                                        1: 'n_outlier_lower',
+                                        1: 'n_outliers_lower',
                                         2: 'n_non_outliers'
                                         }
                                              )
-            qry = 'n_outliers_upper + n_outlier_lower'
-            summary_tbl['n_total_outliers'] = summary_tbl.eval(qry)
-            return summary_tbl
+        # add additional columns in the summary table                            
+        qry_total_outliers = 'n_outliers_upper + n_outliers_lower'
+        summary_tbl['n_total_outliers'] = summary_tbl.eval(qry_total_outliers)
+        qry_total_records = 'n_non_outliers + n_total_outliers'
+        summary_tbl['total_records'] = summary_tbl.eval(qry_total_records)
+        return summary_tbl
 
     def outlier_detector_std(self,
                              _df,
