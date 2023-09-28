@@ -4,7 +4,6 @@
 """
 import pandas as pd
 from typing import List, Tuple, Literal
-import numpy as np
 
 
 @pd.api.extensions.register_dataframe_accessor("bbt")
@@ -31,10 +30,22 @@ class BambooToolsDfAccessor:
             raise AttributeError("Must be a pandas DataFrame")
 
     def completeness(self, by: List[str] = None) -> pd.DataFrame:
-        """Returns the completeness table of a dataframe
+        """Returns the completeness table of a dataframe. The returned columns
+        are: `count`, `perc` and `total`.
+            `count`: the non NULL values
+            `perc`: the ratio of total records to the `count`
+            `total`: the total records
+
+        Args:
+            * by (List[str], optional): List of columns to aggregate. If
+                passed the completeness per column is measured per group. 
+                Defaults to None.
+
+        Raises:
+            AttributeError: Checks if by is a list of string
 
         Returns:
-            pd.DataFrame: The completeness table
+            pd.DataFrame: The completeness dataframe
         """
         if by is None:
             by = self._obj.columns.to_list()
@@ -44,9 +55,9 @@ class BambooToolsDfAccessor:
             perc = self._obj.groupby(by, dropna=False).\
                 apply(lambda x: x.notnull().sum()).sum() / self._obj.shape[0]
 
-            _df = pd.concat([perc, counts], axis=1).\
-                rename(columns={0: 'perc',
-                                1: 'count'
+            _df = pd.concat([counts, perc], axis=1).\
+                rename(columns={0: 'count',
+                                1: 'perc'
                                 }
                        )
             _df['total'] = self._obj.shape[0]
@@ -55,8 +66,8 @@ class BambooToolsDfAccessor:
                 raise AttributeError("`by` arg must be a list of strings")
 
             _df = self._obj.groupby(by, dropna=False).\
-                agg([('perc', lambda x: x.notnull().sum()/x.shape[0]),
-                     ('count', lambda x: x.notnull().sum()),
+                agg([('count', lambda x: x.notnull().sum()),
+                     ('perc', lambda x: x.notnull().sum()/x.shape[0]),
                      ('total', 'size')
                      ]
                     )
@@ -104,18 +115,18 @@ class BambooToolsDfAccessor:
             # group by per categorical column
             if not isinstance(by, list):
                 raise AttributeError("`by` arg must be a list of strings")
-            cols = _df.select_dtypes(include=np.number).columns
+            cols = _df.select_dtypes(exclude=['category', 'object']).columns
             _df = _df.groupby(by)[cols]
             # select and call outlier method:
             if method == 'std':
                 bounds = _df.apply(lambda group: group.apply(
-                    self.outlier_detector_std, std_n=std_n)).unstack()
+                    self._outlier_detector_std, std_n=std_n)).unstack()
             if method == 'iqr':
                 bounds = _df.apply(lambda group: group.apply(
-                    self.outlier_detector_iqr, factor=factor)).unstack()
+                    self._outlier_detector_iqr, factor=factor)).unstack()
             if method == 'percentiles':
                 bounds = _df.apply(lambda group: group.apply(
-                    self.outlier_detector_percentiles,
+                    self._outlier_detector_percentiles,
                     lower_thresh=lower_thresh,
                     upper_thresh=upper_thresh
                     )).unstack()
@@ -124,16 +135,16 @@ class BambooToolsDfAccessor:
         else:
             # do not group by per any categorical column
             # select and call outlier method:
-            _df = _df.select_dtypes(include=np.number)
+            _df = _df.select_dtypes(exclude=['category', 'object'])
             if method == 'std':
-                bounds = self.outlier_detector_std(_df, std_n)
+                bounds = self._outlier_detector_std(_df, std_n)
             if method == 'iqr':
-                bounds = self.outlier_detector_iqr(_df, factor)
+                bounds = self._outlier_detector_iqr(_df, factor)
             if method == 'percentiles':
-                bounds = self.outlier_detector_percentiles(_df,
-                                                           lower_thresh,
-                                                           upper_thresh
-                                                           )
+                bounds = self._outlier_detector_percentiles(_df,
+                                                            lower_thresh,
+                                                            upper_thresh
+                                                            )
             return pd.DataFrame({'lower': bounds['lower'],
                                  'upper': bounds['upper']
                                  }
@@ -177,7 +188,7 @@ class BambooToolsDfAccessor:
                                      lower_thresh, upper_thresh, by)
         outlier_counts = {}
         _df = self.pandas_obj.copy()
-        cols = _df.select_dtypes(include=np.number).columns
+        cols = _df.select_dtypes(exclude=['category', 'object']).columns
         if by:
             # --> groupby summary table (group)
             for group in bounds.index:
@@ -203,14 +214,14 @@ class BambooToolsDfAccessor:
                     outlier_counts[(group,
                                     col,
                                     'n_non_outliers')] = len(non_outliers)
-            # generate the summary table        
+            # generate the summary table
             summary_tbl = pd.Series(outlier_counts).unstack()
         else:
             # --> non groupby summary table
-            # detect outliers
+            _df = _df.select_dtypes(exclude=['category', 'object'])
             lower_outliers = _df.lt(bounds['lower'], axis=1).sum()
             upper_outliers = _df.gt(bounds['upper'], axis=1).sum()
-            # 
+            # count the non outliers
             non_outliers = (_df.le(bounds['upper'], axis=1)
                             & _df.ge(bounds['lower'], axis=1)).sum()
             # concat all the series into one dataframe
@@ -230,23 +241,27 @@ class BambooToolsDfAccessor:
         summary_tbl['total_records'] = summary_tbl.eval(qry_total_records)
         return summary_tbl
 
-    def outlier_detector_std(self,
-                             _df,
-                             std_n: float = 3.0
-                             ) -> pd.Series:
+    def _outlier_detector_std(self,
+                              _df: pd.DataFrame = None,
+                              std_n: float = 3.0
+                              ) -> pd.Series:
         """Returns the upper and lower boundaries which are used to class a
         value as an outlier. The boundaries are caclulated as `std_n` times
         away from the mean.
-
         Note: Not suitable for data which do not follow normal distribution.
 
         Args:
-            std_n (float, optional): The number of standard deviations to be
+            * _df (pd.DataFrame, optional): If called iternally it is passed as
+                an argument. Defaults to None.
+            * std_n (float, optional): The number of standard deviations to be
                 used in the `std` method. Defaults to 3.0.
 
         Returns:
-            pd.Series: The lower and ipper limit
+            pd.Series: The lower and upper bound
         """
+        if _df is None:
+            _df = self._obj
+            _df = _df.select_dtypes(exclude=['category', 'object'])
         data_mean = _df.mean(numeric_only=True)
         data_std = _df.std(numeric_only=True)
         cut_off = data_std * std_n
@@ -254,21 +269,27 @@ class BambooToolsDfAccessor:
         upper_bound = data_mean + cut_off
         return pd.Series({'lower': lower_bound, 'upper': upper_bound})
 
-    def outlier_detector_iqr(self,
-                             _df,
-                             factor: float = 1.5
-                             ) -> Tuple[float, float]:
+    def _outlier_detector_iqr(self,
+                              _df: pd.DataFrame = None,
+                              factor: float = 1.5
+                              ) -> pd.Series:
         """Returns the upper and lower boundaries which are used to class a
         value as an outlier. The boundaries are defined as the points, which
         are `factor` times the IQR below and above the Q1 and Q3 quartiles
         respectively.
 
         Args:
-            std_n (float, factor): The multiplayer of the IQR. Defaults to 1.5.
+            * _df (pd.DataFrame, optional): If called iternally it is passed as
+                an argument. Defaults to None.
+            * std_n (float, factor): The multiplayer of the IQR.
+                Defaults to 1.5.
 
         Returns:
             pd.Series: The lower and upper bound
         """
+        if _df is None:
+            _df = self._obj
+            _df = _df.select_dtypes(exclude=['category', 'object'])
         q25 = _df.quantile(0.25)
         q75 = _df.quantile(0.75)
         iqr = q75 - q25
@@ -277,13 +298,18 @@ class BambooToolsDfAccessor:
         upper_bound = q75 + cut_off
         return pd.Series({'lower': lower_bound, 'upper': upper_bound})
 
-    def outlier_detector_percentiles(self, _df, lower_thresh, upper_thresh
-                                     ) -> Tuple[float, float]:
+    def _outlier_detector_percentiles(self,
+                                      _df: pd.DataFrame = None,
+                                      lower_thresh: float = 0.0,
+                                      upper_thresh: float = 1.0
+                                      ) -> pd.Series:
         """Returns the upper and lower boundaries which are used to class a
         value as an outlier. The boundaries are calculated as the returd values  
         at the given `lower_thesh` and `upper_thresh` percentiles.
 
         Args:
+            * _df (pd.DataFrame, optional): If called iternally it is passed as
+                an argument. Defaults to None.
             * lower_thresh: Value between 0 <= q <= 1, the percentile to 
                 compute for the lower boundary value.
             * upper_thresh: Value between 0 <= q <= 1, the percentile to
@@ -292,6 +318,9 @@ class BambooToolsDfAccessor:
         Returns:
             pd.Series: The lower and upper bound
         """
+        if _df is None:
+            _df = self._obj
+            _df = _df.select_dtypes(exclude=['category', 'object'])
         lower_bound = _df.quantile(lower_thresh)
         upper_bound = _df.quantile(upper_thresh)
         return pd.Series({'lower': lower_bound, 'upper': upper_bound})
