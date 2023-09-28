@@ -38,7 +38,7 @@ class BambooToolsDfAccessor:
 
         Args:
             * by (List[str], optional): List of columns to aggregate. If
-                passed the completeness per column is measured per group. 
+                passed the completeness per column is measured per group.
                 Defaults to None.
 
         Raises:
@@ -91,7 +91,7 @@ class BambooToolsDfAccessor:
                 standard deviations. Use if you assume that your data are
                 normally distributed.
                 - 'iqr': Calculates the IQR, then considers as an outlier
-                every value being `factor`*IQR below or upper the 25%, 75% 
+                every value being `factor`*IQR below or upper the 25%, 75%
                 percentiles respectively.
                 - 'percentiles': Detects as outliers, every value being below
                 or upper the given percentiles.
@@ -131,7 +131,7 @@ class BambooToolsDfAccessor:
                     upper_thresh=upper_thresh
                     )).unstack()
             return bounds
-        
+
         else:
             # do not group by per any categorical column
             # select and call outlier method:
@@ -155,7 +155,7 @@ class BambooToolsDfAccessor:
                         lower_thresh: float = 0.0, upper_thresh: float = 1.0,
                         by: List = None
                         ) -> pd.DataFrame:
-        """Returns an outlier summary table (counts of outliers) for upper and 
+        """Returns an outlier summary table (counts of outliers) for upper and
         lower bounds. Utilises existing functions.
 
         Args:
@@ -166,7 +166,7 @@ class BambooToolsDfAccessor:
                 standard deviations. Use if you assume that your data are
                 normally distributed.
                 - 'iqr': Calculates the IQR, then considers as an outlier
-                every value being `factor`*IQR below or upper the 25%, 75% 
+                every value being `factor`*IQR below or upper the 25%, 75%
                 percentiles respectively.
                 - 'percentiles': Detects as outliers, every value being below
                 or upper the given percentiles.
@@ -234,7 +234,7 @@ class BambooToolsDfAccessor:
                                         2: 'n_non_outliers'
                                         }
                                              )
-        # add additional columns in the summary table                            
+        # add additional columns in the summary table
         qry_total_outliers = 'n_outliers_upper + n_outliers_lower'
         summary_tbl['n_total_outliers'] = summary_tbl.eval(qry_total_outliers)
         qry_total_records = 'n_non_outliers + n_total_outliers'
@@ -304,17 +304,17 @@ class BambooToolsDfAccessor:
                                       upper_thresh: float = 1.0
                                       ) -> pd.Series:
         """Returns the upper and lower boundaries which are used to class a
-        value as an outlier. The boundaries are calculated as the returd values  
+        value as an outlier. The boundaries are calculated as the returd values
         at the given `lower_thesh` and `upper_thresh` percentiles.
 
         Args:
             * _df (pd.DataFrame, optional): If called iternally it is passed as
                 an argument. Defaults to None.
-            * lower_thresh: Value between 0 <= q <= 1, the percentile to 
+            * lower_thresh: Value between 0 <= q <= 1, the percentile to
                 compute for the lower boundary value.
             * upper_thresh: Value between 0 <= q <= 1, the percentile to
                 compute for the upper boundary value.
-           
+
         Returns:
             pd.Series: The lower and upper bound
         """
@@ -336,7 +336,7 @@ class BambooToolsSeriesAccessor:
     def series_obj(self) -> pd.Series:
         return self._obj
 
-    @staticmethod    
+    @staticmethod
     def _validate(obj) -> None:
         """Validate that the passed object is a pandas Series
 
