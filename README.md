@@ -6,21 +6,23 @@ With BambooTools, you can easily identify and handle outliers in your data, enab
 
 ## Installation
 
+Install from PiPy
+
 ```bash
-pip install git+https://github.com/KwstasMCPU/BambooTools
+pip install BambooTools
 ```
 
-OR simple download the project and:
+Install from source
 
 ```bash
-pip install . 
+pip install git+https://github.com/KwstasMCPU/BambooTools
 ```
 
 # Usage
 
 ## Completeness summary
 
-`completeness()` retuns a completeness summary table, stating the percentage and count of complete (not NULL) values:
+`completeness()` retuns a completeness summary table, stating the percentages and counts of complete (not NULL) values for each column:
 
 ```python
 from bambootools import bambootools
@@ -111,9 +113,7 @@ print(penguins.bbt.outlier_summary(method='iqr', by=['sex', 'species'], factor=1
 
 `outlier_bounds()` returns the boundary values which any value below or above is considered an outlier:
 ```python
-print(penguins.bbt.outlier_bounds(method='iqr',
-                                  by=['sex', 'species'],
-                                  factor=1))
+print(penguins.bbt.outlier_bounds(method='iqr', by=['sex', 'species'], factor=1))
 ```
 |            |               | bill_length_mm | bill_length_mm | bill_depth_mm | bill_depth_mm | flipper_length_mm | flipper_length_mm | body_mass_g | body_mass_g |
 |------------|---------------|----------------|----------------|---------------|---------------|-------------------|-------------------|-------------|-------------|

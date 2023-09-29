@@ -27,24 +27,26 @@ for col, n_nulls in zip(['weight', 'tail length', 'name'], [3, 5, 1]):
     df.loc[null_indices, col] = np.nan
 
 # get dataset's completeness for each column
-print(df.bbt.completeness())
+print(df.bbt.completeness(format=True))
 
 # get dataset's completeness per group
-print(df.bbt.completeness(by=['animal']))
+print(df.bbt.completeness(by=['animal'])[]['perc'].apply('{:.2%}'.format))
+
+# outlier boundaries per group
+penguins = sns.load_dataset("penguins")
+print(penguins.bbt.outlier_bounds(method='std',
+                                  by=['sex', 'species']))
+
+# outliers summary
+print(penguins.bbt.outlier_summary(method='std'))
+
+# outliers summary per group
+print(penguins.bbt.outlier_summary(method='iqr',
+                                   by=['sex', 'species'],
+                                   factor=1))
 
 # find how many values and their percentage which are above a threshold
 print(df['weight'].bbt.above(thresh=30))
 
 # find how many values and their percentage which are below a threshold
 print(df['weight'].bbt.below(thresh=30))
-
-# outlier boundaries per group
-penguins = sns.load_dataset("penguins")
-print(penguins.bbt.outlier_bounds(method='iqr',
-                                  by=['sex', 'species'],
-                                  factor=1.5))
-
-# outliers summary per group
-print(penguins.bbt.outlier_summary(method='iqr',
-                                   by=['sex', 'species'],
-                                   factor=1))
