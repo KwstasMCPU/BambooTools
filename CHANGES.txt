@@ -2,10 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v.0.5.0-beta] - 2023
+## [v.0.3.0-beta] - 2023
 
 ### Added
-- 
+- `format` argument was added in the `completeness_summary()` method. If True
+the output is formated with pandas Styler.
 
 ### Changed
 -  The outlier detector functions have been renamed to indicate that they 

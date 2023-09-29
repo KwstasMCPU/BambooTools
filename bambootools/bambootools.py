@@ -29,7 +29,8 @@ class BambooToolsDfAccessor:
         if not isinstance(obj, pd.DataFrame):
             raise AttributeError("Must be a pandas DataFrame")
 
-    def completeness(self, by: List[str] = None) -> pd.DataFrame:
+    def completeness(self, by: List[str] = None,
+                     format: bool = False) -> pd.DataFrame:
         """Returns the completeness table of a dataframe. The returned columns
         are: `count`, `perc` and `total`.
             `count`: the non NULL values
@@ -40,6 +41,9 @@ class BambooToolsDfAccessor:
             * by (List[str], optional): List of columns to aggregate. If
                 passed the completeness per column is measured per group.
                 Defaults to None.
+            * format (bool, optional): If True the perc column is formated
+                to a percentage (eg 50.00%). Note that it returns a pandas 
+                Styler object instead of a DataFrame.
 
         Raises:
             AttributeError: Checks if by is a list of string
@@ -61,6 +65,9 @@ class BambooToolsDfAccessor:
                                 }
                        )
             _df['total'] = self._obj.shape[0]
+            
+            if format:
+                _df = _df.style.format({'perc': '{:.2%}'})
         else:
             if not isinstance(by, List):
                 raise AttributeError("`by` arg must be a list of strings")
@@ -71,7 +78,10 @@ class BambooToolsDfAccessor:
                      ('total', 'size')
                      ]
                     )
-
+            if format:
+                format_dict = dict([(t, '{:.2%}') for t in
+                                    _df.columns if t[1] == 'perc'])
+                _df = _df.style.format(format_dict)
         return _df
 
     def outlier_bounds(self, method: Literal['std', 'iqr', 'percentiles'],

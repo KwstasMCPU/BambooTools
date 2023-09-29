@@ -27,10 +27,10 @@ for col, n_nulls in zip(['weight', 'tail length', 'name'], [3, 5, 1]):
     df.loc[null_indices, col] = np.nan
 
 # get dataset's completeness for each column
-print(df.bbt.completeness())
+print(df.bbt.completeness(format=True))
 
 # get dataset's completeness per group
-print(df.bbt.completeness(by=['animal']))
+print(df.bbt.completeness(by=['animal'])[]['perc'].apply('{:.2%}'.format))
 
 # outlier boundaries per group
 penguins = sns.load_dataset("penguins")
