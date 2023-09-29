@@ -6,14 +6,16 @@ With BambooTools, you can easily identify and handle outliers in your data, enab
 
 ## Installation
 
+Install from PiPy
+
 ```bash
-pip install git+https://github.com/KwstasMCPU/BambooTools
+pip install BambooTools
 ```
 
-OR simple download the project and:
+Install from source
 
 ```bash
-pip install . 
+pip install git+https://github.com/KwstasMCPU/BambooTools
 ```
 
 # Usage

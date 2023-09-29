@@ -11,7 +11,7 @@ setup(
     packages=find_packages(),
     url='https://github.com/KwstasMCPU/BambooTools',
     license='MIT',
-    description='Useful Bamboo stuff.',
+    description='Pandas extensions to enchance your data analysis.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     install_requires=[
