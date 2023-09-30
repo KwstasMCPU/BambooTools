@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [v.0.3.0-beta] - 2023
 
 ### Added
+
+- `missing_corr_matrix()` method has been added. It calculates the conditional 
+probability of a column being NULL if another column is NULL.
+
 - `format` argument was added in the `completeness_summary()` method. If True
 the output is formated with pandas Styler.
 
