@@ -66,6 +66,14 @@ def test_completeness_per_group(animals_dataset):
     )
 
 
+def test_missing_corr_matrix(animals_dataset):
+    result = animals_dataset.bbt.missing_corr_matrix()
+    n_columns = animals_dataset.shape[1]
+    assert result.shape == (n_columns, n_columns), (
+        "A {}x{} martix was expected".format(n_columns, n_columns)
+    )
+
+
 def test_outlier_summary(penguins_dataset):
     result = penguins_dataset.bbt.outlier_summary(method='iqr',
                                                   by=['sex', 'species']

@@ -60,6 +60,53 @@ print(df.bbt.completeness(by=['Animal']))
 | Falcon | 0.666666667 | 2         | 3         | 0.666666667 | 2      | 3      |
 | Lama   | 0           | 0         | 1         | 1           | 1      | 1      |
 | Parrot | 1           | 2         | 2         | 0.5         | 1      | 2      |
+
+## Missing values correlation matrix
+`missing_corr_matrix()` This matrix aims to help to pintpoint relationships between missing values of different columns. Calculates
+the conditional probability of a column's value being NaN, given the fact another column value is NaN.
+
+For a dataset with two columns `'A', 'B'` the conditional probability of a value from column `'A'` being NaN is:
+
+$$P(A \text{ is NULL } | B \text{ is NULL}) = \frac{P(A \text{ is NULL } \cap B \text{ is NULL})}{P(B \text{ is NULL})}$$
+
+*Note:* The matrix alone will not tell the whole story. Additional metrics, such dataset's completeness can help if any relationship exists.
+
+```python
+# Generate a bigger dataset
+# Set a seed for reproducibility
+np.random.seed(0)
+
+# Define the number of records
+n_records = 50
+
+# Define the categories for the 'animal' column
+animals = ['cat', 'dog', 'lama']
+
+# Generate random data
+df = pd.DataFrame({
+    'animal': np.random.choice(animals, n_records),
+    'color': np.random.choice(['black', 'white', 'brown', 'gray'], n_records),
+    'weight': np.random.randint(1, 100, n_records),
+    'tail length': np.random.randint(1, 50, n_records),
+    'height': np.random.randint(10, 500, n_records)
+})
+
+# Insert NULL values in the 'animal', 'color', 'weight', 'tail length' and 'height' columns
+for col, n_nulls in zip(df.columns, [2, 15, 20, 48, 17]):
+    null_indices = np.random.choice(df.index, n_nulls, replace=False)
+    df.loc[null_indices, col] = np.nan
+
+# missing values correlations
+print(df.bbt.missing_corr_matrix())
+```
+|             | animal   | color    | weight   | tail length | height   |
+|-------------|----------|----------|----------|-------------|----------|
+| animal      | NaN      | 0.5      | 0.5      | 1           | 0        |
+| color       | 0.066667 | NaN      | 0.333333 | 1           | 0.4      |
+| weight      | 0.05     | 0.25     | NaN      | 0.95        | 0.25     |
+| tail length | 0.041667 | 0.3125   | 0.395833 | NaN         | 0.354167 |
+| height      | 0        | 0.352941 | 0.294118 | 1           | NaN      |
+
 ## Outlier summary
 
 `outlier_summary()` retuns a summary of the outliers found in the dataset based on a specific method (eg. IQR).

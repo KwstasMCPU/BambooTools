@@ -3,6 +3,7 @@
 :license: MIT, see LICENSE for more details.
 """
 import pandas as pd
+import numpy as np
 from itertools import combinations
 from typing import List, Tuple, Literal
 
@@ -66,7 +67,7 @@ class BambooToolsDfAccessor:
                                 }
                        )
             _df['total'] = self._obj.shape[0]
-            
+
             if format:
                 _df = _df.style.format({'perc': '{:.2%}'})
         else:
@@ -86,19 +87,20 @@ class BambooToolsDfAccessor:
         return _df
 
     def missing_corr_matrix(self) -> pd.DataFrame:
-        """Returns a missing correlations matrix. A missing correlation matrix
-        is a table, which states for every column, how mamy times its records
-        are null in relation with another column. In more details, if comparing
-        columns A and B, it is the ratio between the number of records where
-        both columns are NULL, and the total number of NULL values in column B.
+        """Returns a missing correlations matrix. Calculates the conditional
+        probability of a column being NULL given the fact another column is
+        NULL.
 
-        In other words calculates the conditional probability of column A
-        being NULL if column B is NULL.
+        A missing correlation matrix is a table, which states for every column
+        the probability of its values being NULL given the fact another's
+        column values are NULL. In more details, if comparing columns A and B,
+        it is the ratio between the number of records where both columns are
+        NULL, and the total number of NULL values in column B.
 
         Note that the ratio between A and B is not equal to the ratio between
         B and A.
 
-            `P(A is NULL | B is NULL) = A is NULL & B is NULL / B is NULL`
+        `P(A is NULL | B is NULL) = P(A is NULL & B is NULL) / P(B is NULL)`
 
         Returns:
             pd.DataFrame: Returns an n x n matrix, with n equals the number of
@@ -107,22 +109,24 @@ class BambooToolsDfAccessor:
         _df = self._obj
         columns_pairs_comb = list(combinations(_df.columns, 2))
         pairs_dict = {}
-        for pair_1, pair_2 in columns_pairs_comb:
-            result = self._missing_relationship(_df=_df,
-                                                col_a=pair_1, 
-                                                col_b=pair_2)
-            if pair_1 in pairs_dict:
-                pairs_dict[pair_1].update({pair_2: result[0]})
+        for col_a, col_b in columns_pairs_comb:
+            # calculate the conditional probabilities for each columns
+            # pair
+            result = self._conditional_probability(_df=_df,
+                                                   col_a=col_a,
+                                                   col_b=col_b)
+            if col_a in pairs_dict:
+                pairs_dict[col_a].update({col_b: result[0]})
             else:
-                pairs_dict[pair_1] = {pair_2: result[0]}
-            if pair_2 in pairs_dict:
-                pairs_dict[pair_2].update({pair_1: result[1]})
+                pairs_dict[col_a] = {col_b: result[0]}
+            if col_b in pairs_dict:
+                pairs_dict[col_b].update({col_a: result[1]})
             else:
-                pairs_dict[pair_2] = {pair_1: result[1]}
-      
+                pairs_dict[col_b] = {col_a: result[1]}
+
         matrix = pd.DataFrame(pairs_dict)
         return matrix.reindex(matrix.columns)
-        
+
     def outlier_bounds(self, method: Literal['std', 'iqr', 'percentiles'],
                        std_n: float = 3.0, factor: float = 1.5,
                        lower_thresh: float = 0.0, upper_thresh: float = 1.0,
@@ -373,13 +377,45 @@ class BambooToolsDfAccessor:
         lower_bound = _df.quantile(lower_thresh)
         upper_bound = _df.quantile(upper_thresh)
         return pd.Series({'lower': lower_bound, 'upper': upper_bound})
-    
-    def _missing_relationship(self, _df: pd.DataFrame, col_a: str, col_b: str):
+
+    def _conditional_probability(self,
+                                 _df: pd.DataFrame,
+                                 col_a: str,
+                                 col_b: str) -> Tuple[float, float]:
+        """Calculates the probability of a column's value being NULL given the
+        fact another's column value is NULL (conditional probability).
+
+        Args:
+            * _df (pd.DataFrame): The dataframe holding the both columns
+            * col_a (str): Column name of the first column
+            * col_b (str): Column name of the second column
+
+        Returns:
+            Tuple[float, float]: The conditional probabilities for a value of
+                `col_a` and `col_b` being NULL respectively
+        """
         col_a_mask = _df[col_a].isna()
         col_b_mask = _df[col_b].isna()
         both_na = (col_a_mask & col_b_mask).sum()
-        return both_na / col_b_mask.sum(), both_na / col_a_mask.sum()
-        
+        p_a_being_na = col_a_mask.sum() / _df.shape[0]
+        p_b_being_na = col_b_mask.sum() / _df.shape[0]
+        p_both_being_na = both_na / _df.shape[0]
+        # check for for possible division with zero warning
+        msg = """`{}` has no NULL values.
+        Conditional probability for `{}` set to NaN."""
+        # column b has no NaN
+        if p_b_being_na == 0:
+            print(msg.format(col_b, col_a))
+            p_a_conditional = np.nan
+        else:
+            p_a_conditional = p_both_being_na / p_b_being_na
+        # column a has no NaN
+        if p_a_being_na == 0:
+            print(msg.format(col_a, col_b))
+            p_b_conditional = np.nan
+        else:
+            p_b_conditional = p_both_being_na / p_a_being_na
+        return p_a_conditional, p_b_conditional
 
 
 @pd.api.extensions.register_series_accessor("bbt")
