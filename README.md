@@ -174,7 +174,35 @@ print(penguins.bbt.outlier_bounds(method='iqr', by=['sex', 'species'], factor=1)
 | **Male**   | **Gentoo**    | 45.7           | 52.9           | 14.3          | 17            | 211               | 232               | 4900        | 6100        |
 # Contributing
 
-Contributions are welcome! Contribution guidelines are pending.
+Contributions are more than welcome! You can contribute with several ways:
+
+* Bug reports and bug fixes
+* Recommendations for new features and implementation of those
+* Writing and or improving existing tests, to ensure quality
+
+Prior any contributions, opening an issue is recommended.
+
+It is also recommended to install the package in ["development mode"](https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#working-in-development-mode) while working on it. *When installed as editable, a project can be edited in-place without reinstallation*
+
+To install a Python package in "editable"/"development" mode change directory to the root of the project directory and run:
+
+```bash
+pip install -e .
+```
+## Install development dependencies
+In order to install the packages used for the development (e.g. pytest), run the below:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+## General Guidelines
+
+1. Fork the repository on GitHub.
+2. Clone the forked repository to your local machine.
+3. Make a new branch, from the `develop` branch for your feature or bug fix.
+4. Implement your changes.
+5. Create a Pull Request. Link it to the issue you have opened.
 
 # Credits
 

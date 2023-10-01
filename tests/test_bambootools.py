@@ -22,7 +22,7 @@ def animals_dataset():
         'weight': np.random.randint(1, 100, n_records),
         'tail length': np.random.randint(1, 100, n_records),
         'color': np.random.choice(['black', 'white',
-                                   'brown', 'gray'], 
+                                   'brown', 'gray'],
                                   n_records),
         'name': [f'name_{i}' for i in range(n_records)]
     })

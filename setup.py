@@ -18,7 +18,7 @@ setup(
         "pandas >= 1.5.3"
         ],
     extras_require={
-        "dev": ["pytest", "twine", "seaborn"]
+        "dev": ["pytest>=>=7.4.2", "twine", "seaborn"]
         },
     classifiers=["Development Status :: 3 - Alpha",
                  "Programming Language :: Python :: 3",

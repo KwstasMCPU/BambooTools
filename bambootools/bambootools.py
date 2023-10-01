@@ -44,7 +44,7 @@ class BambooToolsDfAccessor:
                 passed the completeness per column is measured per group.
                 Defaults to None.
             * format (bool, optional): If True the perc column is formated
-                to a percentage (eg 50.00%). Note that it returns a pandas 
+                to a percentage (eg 50.00%). Note that it returns a pandas
                 Styler object instead of a DataFrame.
 
         Raises:
