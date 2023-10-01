@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name='BambooTools',
-    version='0.2.0',
+    version='0.3.0',
     author='Konstantinos Maravegias',
     author_email='kwstas.maras@gmail.com',
     packages=find_packages(),
@@ -15,10 +15,10 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     install_requires=[
-        "pandas >= 1.5.3"
+        "pandas>=1.5.3"
         ],
     extras_require={
-        "dev": ["pytest>=>=7.4.2", "twine", "seaborn"]
+        "dev": ["pytest>=7.4.2", "twine", "seaborn"]
         },
     classifiers=["Development Status :: 3 - Alpha",
                  "Programming Language :: Python :: 3",
