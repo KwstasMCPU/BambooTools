@@ -22,7 +22,7 @@ def animals_dataset():
         'weight': np.random.randint(1, 100, n_records),
         'tail length': np.random.randint(1, 100, n_records),
         'color': np.random.choice(['black', 'white',
-                                   'brown', 'gray'], 
+                                   'brown', 'gray'],
                                   n_records),
         'name': [f'name_{i}' for i in range(n_records)]
     })
@@ -63,6 +63,14 @@ def test_completeness_per_group(animals_dataset):
     n_cats = animals_dataset['animal'].value_counts()['cat']
     assert result['weight'].loc['cat', 'total'] == n_cats, (
         "Total counts per category must equal the value counts."
+    )
+
+
+def test_missing_corr_matrix(animals_dataset):
+    result = animals_dataset.bbt.missing_corr_matrix()
+    n_columns = animals_dataset.shape[1]
+    assert result.shape == (n_columns, n_columns), (
+        "A {}x{} martix was expected".format(n_columns, n_columns)
     )
 
 

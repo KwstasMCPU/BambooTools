@@ -1,26 +1,30 @@
 # BambooTools
 
-BambooTools is Python library designed to enhance your data analysis workflows. Built as an extension to the widely-used pandas library, BambooTools provides one liner methods for outlier detection and completeness summary in pandas datasets.
+BambooTools is a Python library designed to enhance your data analysis workflows. Built as an extension to the widely-used pandas library, BambooTools provides one liner methods for outlier detection and investigation of missing values.
 
 With BambooTools, you can easily identify and handle outliers in your data, enabling more accurate analyses and predictions. The library also offers a completeness summary feature, which provides a quick and efficient way to assess the completeness of your dataset.
 
 ## Installation
 
+Install from PiPy
+
+```bash
+pip install BambooTools
+```
+
+Install from source
+
 ```bash
 pip install git+https://github.com/KwstasMCPU/BambooTools
 ```
 
-OR simple download the project and:
-
-```bash
-pip install . 
-```
-
 # Usage
+
+You can find examples in the `bin\examples.py` file. I have illustrated some below as well.
 
 ## Completeness summary
 
-`completeness()` retuns a completeness summary table, stating the percentage and count of complete (not NULL) values:
+`completeness()` retuns a completeness summary table, stating the percentages and counts of complete (not NULL) values for each column:
 
 ```python
 from bambootools import bambootools
@@ -58,6 +62,53 @@ print(df.bbt.completeness(by=['Animal']))
 | Falcon | 0.666666667 | 2         | 3         | 0.666666667 | 2      | 3      |
 | Lama   | 0           | 0         | 1         | 1           | 1      | 1      |
 | Parrot | 1           | 2         | 2         | 0.5         | 1      | 2      |
+
+## Missing values correlation matrix
+`missing_corr_matrix()` This matrix aims to help to pintpoint relationships between missing values of different columns. Calculates
+the conditional probability of a column's value being NaN, given the fact another column value is NaN.
+
+For a dataset with two columns `'A', 'B'` the conditional probability of a value from column `'A'` being NaN is:
+
+$$P(A \text{ is NULL } | B \text{ is NULL}) = \frac{P(A \text{ is NULL } \cap B \text{ is NULL})}{P(B \text{ is NULL})}$$
+
+*Note:* The matrix alone will not tell the whole story. Additional metrics, such dataset's completeness can help if any relationship exists.
+
+```python
+# Generate a bigger dataset
+# Set a seed for reproducibility
+np.random.seed(0)
+
+# Define the number of records
+n_records = 50
+
+# Define the categories for the 'animal' column
+animals = ['cat', 'dog', 'lama']
+
+# Generate random data
+df = pd.DataFrame({
+    'animal': np.random.choice(animals, n_records),
+    'color': np.random.choice(['black', 'white', 'brown', 'gray'], n_records),
+    'weight': np.random.randint(1, 100, n_records),
+    'tail length': np.random.randint(1, 50, n_records),
+    'height': np.random.randint(10, 500, n_records)
+})
+
+# Insert NULL values in the 'animal', 'color', 'weight', 'tail length' and 'height' columns
+for col, n_nulls in zip(df.columns, [2, 15, 20, 48, 17]):
+    null_indices = np.random.choice(df.index, n_nulls, replace=False)
+    df.loc[null_indices, col] = np.nan
+
+# missing values correlations
+print(df.bbt.missing_corr_matrix())
+```
+|             | animal   | color    | weight   | tail length | height   |
+|-------------|----------|----------|----------|-------------|----------|
+| animal      | NaN      | 0.5      | 0.5      | 1           | 0        |
+| color       | 0.066667 | NaN      | 0.333333 | 1           | 0.4      |
+| weight      | 0.05     | 0.25     | NaN      | 0.95        | 0.25     |
+| tail length | 0.041667 | 0.3125   | 0.395833 | NaN         | 0.354167 |
+| height      | 0        | 0.352941 | 0.294118 | 1           | NaN      |
+
 ## Outlier summary
 
 `outlier_summary()` retuns a summary of the outliers found in the dataset based on a specific method (eg. IQR).
@@ -111,9 +162,7 @@ print(penguins.bbt.outlier_summary(method='iqr', by=['sex', 'species'], factor=1
 
 `outlier_bounds()` returns the boundary values which any value below or above is considered an outlier:
 ```python
-print(penguins.bbt.outlier_bounds(method='iqr',
-                                  by=['sex', 'species'],
-                                  factor=1))
+print(penguins.bbt.outlier_bounds(method='iqr', by=['sex', 'species'], factor=1))
 ```
 |            |               | bill_length_mm | bill_length_mm | bill_depth_mm | bill_depth_mm | flipper_length_mm | flipper_length_mm | body_mass_g | body_mass_g |
 |------------|---------------|----------------|----------------|---------------|---------------|-------------------|-------------------|-------------|-------------|
@@ -127,7 +176,37 @@ print(penguins.bbt.outlier_bounds(method='iqr',
 | **Male**   | **Gentoo**    | 45.7           | 52.9           | 14.3          | 17            | 211               | 232               | 4900        | 6100        |
 # Contributing
 
-Contributions are welcome! Contribution guidelines are pending.
+Contributions are more than welcome! You can contribute with several ways:
+
+* Bug reports and bug fixes
+* Recommendations for new features and implementation of those
+* Writing and or improving existing tests, to ensure quality
+
+Prior any contributions, opening an issue is recommended.
+
+It is also recommended to install the package in ["development mode"](https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#working-in-development-mode) while working on it. *When installed as editable, a project can be edited in-place without reinstallation.*
+
+To install a Python package in "editable"/"development" mode change directory to the root of the project directory and run:
+
+```bash
+pip install -e .
+pip install -r requirements-dev.txt # this will install the development dependencies (e.g. pytest)
+```
+
+In order to install the package and the development dependencies with a one liner, run the below:
+
+```bash
+pip install -e ".[dev]"
+```
+
+## General Guidelines
+
+1. Fork the repository on GitHub.
+2. Clone the forked repository to your local machine.
+3. Make a new branch, from the `develop` branch for your feature or bug fix.
+4. Implement your changes. 
+   - It is recommended to write tests and examples for them in `tests\test_bambootols.py` and `bin\examples.py` respectively.
+1. Create a Pull Request. Link it to the issue you have opened.
 
 # Credits
 

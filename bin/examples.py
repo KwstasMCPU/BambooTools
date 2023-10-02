@@ -7,22 +7,23 @@ import seaborn as sns
 np.random.seed(0)
 
 # Define the number of records
-n_records = 20
+n_records = 50
 
 # Define the categories for the 'animal' column
 animals = ['cat', 'dog', 'lama']
 
-# Generate random data for the 'animal', 'weight', and 'tail length' columns
+# Generate random data
 df = pd.DataFrame({
     'animal': np.random.choice(animals, n_records),
-    'weight': np.random.randint(1, 100, n_records),
-    'tail length': np.random.randint(1, 100, n_records),
     'color': np.random.choice(['black', 'white', 'brown', 'gray'], n_records),
-    'name': [f'name_{i}' for i in range(n_records)]
+    'weight': np.random.randint(1, 100, n_records),
+    'tail length': np.random.randint(1, 50, n_records),
+    'height': np.random.randint(10, 500, n_records)
 })
 
-# Insert NULL values in the 'weight', 'tail length' and 'name' columns
-for col, n_nulls in zip(['weight', 'tail length', 'name'], [3, 5, 1]):
+# Insert NULL values in the 'animal', 'color', 'weight', 'tail length' and
+# 'height' columns
+for col, n_nulls in zip(df.columns, [2, 15, 20, 48, 17]):
     null_indices = np.random.choice(df.index, n_nulls, replace=False)
     df.loc[null_indices, col] = np.nan
 
@@ -32,19 +33,24 @@ print(df.bbt.completeness())
 # get dataset's completeness per group
 print(df.bbt.completeness(by=['animal']))
 
-# find how many values and their percentage which are above a threshold
-print(df['weight'].bbt.above(thresh=30))
-
-# find how many values and their percentage which are below a threshold
-print(df['weight'].bbt.below(thresh=30))
+# get missing correlation matrix
+print(df.bbt.missing_corr_matrix().to_clipboard())
 
 # outlier boundaries per group
 penguins = sns.load_dataset("penguins")
-print(penguins.bbt.outlier_bounds(method='iqr',
-                                  by=['sex', 'species'],
-                                  factor=1.5))
+print(penguins.bbt.outlier_bounds(method='std',
+                                  by=['sex', 'species']))
+
+# outliers summary
+print(penguins.bbt.outlier_summary(method='std'))
 
 # outliers summary per group
 print(penguins.bbt.outlier_summary(method='iqr',
                                    by=['sex', 'species'],
                                    factor=1))
+
+# find how many values and their percentage which are above a threshold
+print(df['weight'].bbt.above(thresh=30))
+
+# find how many values and their percentage which are below a threshold
+print(df['weight'].bbt.below(thresh=30))

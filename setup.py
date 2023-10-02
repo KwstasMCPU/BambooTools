@@ -5,27 +5,29 @@ with open("README.md", "r") as f:
 
 setup(
     name='BambooTools',
-    version='0.2.0',
+    version='0.3.0',
     author='Konstantinos Maravegias',
     author_email='kwstas.maras@gmail.com',
     packages=find_packages(),
     url='https://github.com/KwstasMCPU/BambooTools',
     license='MIT',
-    description='Useful Bamboo stuff.',
+    description='Pandas extension to enchance your data analysis.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     install_requires=[
-        "pandas >= 1.5.3"
+        "pandas>=1.5.3"
         ],
     extras_require={
-        "dev": ["pytest", "twine", "seaborn"]
+        "dev": ["pytest>=7.4.2", "twine", "seaborn"]
         },
-    classifiers=["Development Status :: 3 - Alpha",
+    classifiers=["Development Status :: 4 - Beta",
                  "Programming Language :: Python :: 3",
                  "Intended Audience :: Developers",
                  "Intended Audience :: Science/Research",
                  "License :: OSI Approved :: MIT License"
                  ],
-    keywords='pandas, pandas extensions, data analysis, data science',
+    keywords=['BambooTools', 'pandas', 'pandas extensions',
+              'data analysis', 'data science'
+              ],
     python_requires='>=3.8'
 )
