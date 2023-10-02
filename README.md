@@ -20,6 +20,8 @@ pip install git+https://github.com/KwstasMCPU/BambooTools
 
 # Usage
 
+You can find examples in the `bin\examples.py` file. I have illustrated some below as well.
+
 ## Completeness summary
 
 `completeness()` retuns a completeness summary table, stating the percentages and counts of complete (not NULL) values for each column:
@@ -182,18 +184,19 @@ Contributions are more than welcome! You can contribute with several ways:
 
 Prior any contributions, opening an issue is recommended.
 
-It is also recommended to install the package in ["development mode"](https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#working-in-development-mode) while working on it. *When installed as editable, a project can be edited in-place without reinstallation*
+It is also recommended to install the package in ["development mode"](https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#working-in-development-mode) while working on it. *When installed as editable, a project can be edited in-place without reinstallation.*
 
 To install a Python package in "editable"/"development" mode change directory to the root of the project directory and run:
 
 ```bash
 pip install -e .
+pip install -r requirements-dev.txt # this will install the development dependencies (e.g. pytest)
 ```
-## Install development dependencies
-In order to install the packages used for the development (e.g. pytest), run the below:
+
+In order to install the package and the development dependencies with a one liner, run the below:
 
 ```bash
-pip install -r requirements-dev.txt
+pip install -e ".[dev]"
 ```
 
 ## General Guidelines
@@ -201,8 +204,9 @@ pip install -r requirements-dev.txt
 1. Fork the repository on GitHub.
 2. Clone the forked repository to your local machine.
 3. Make a new branch, from the `develop` branch for your feature or bug fix.
-4. Implement your changes.
-5. Create a Pull Request. Link it to the issue you have opened.
+4. Implement your changes. 
+   - It is recommended to write tests and examples for them in `tests\test_bambootols.py` and `bin\examples.py` respectively.
+1. Create a Pull Request. Link it to the issue you have opened.
 
 # Credits
 
