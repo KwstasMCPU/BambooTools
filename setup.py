@@ -11,7 +11,7 @@ setup(
     packages=find_packages(),
     url='https://github.com/KwstasMCPU/BambooTools',
     license='MIT',
-    description='Pandas extensions to enchance your data analysis.',
+    description='Pandas extension to enchance your data analysis.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     install_requires=[
@@ -20,12 +20,14 @@ setup(
     extras_require={
         "dev": ["pytest>=7.4.2", "twine", "seaborn"]
         },
-    classifiers=["Development Status :: 3 - Alpha",
+    classifiers=["Development Status :: 4 - Beta",
                  "Programming Language :: Python :: 3",
                  "Intended Audience :: Developers",
                  "Intended Audience :: Science/Research",
                  "License :: OSI Approved :: MIT License"
                  ],
-    keywords='pandas, pandas extensions, data analysis, data science',
+    keywords=['BambooTools', 'pandas', 'pandas extensions',
+              'data analysis', 'data science'
+              ],
     python_requires='>=3.8'
 )
