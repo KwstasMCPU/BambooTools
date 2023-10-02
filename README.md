@@ -1,6 +1,6 @@
 # BambooTools
 
-BambooTools is Python library designed to enhance your data analysis workflows. Built as an extension to the widely-used pandas library, BambooTools provides one liner methods for outlier detection and completeness summary in pandas datasets.
+BambooTools is a Python library designed to enhance your data analysis workflows. Built as an extension to the widely-used pandas library, BambooTools provides one liner methods for outlier detection and investigation of missing values.
 
 With BambooTools, you can easily identify and handle outliers in your data, enabling more accurate analyses and predictions. The library also offers a completeness summary feature, which provides a quick and efficient way to assess the completeness of your dataset.
 
