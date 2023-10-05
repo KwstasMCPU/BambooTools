@@ -158,6 +158,7 @@ cython_debug/
 # exclude specific files
 docs/
 *.ipynb
+TODO
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
