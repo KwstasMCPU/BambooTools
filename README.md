@@ -65,9 +65,9 @@ print(df.bbt.completeness(by=['Animal']))
 
 ## Missing values correlation matrix
 `missing_corr_matrix()` This matrix aims to help to pintpoint relationships between missing values of different columns. Calculates
-the conditional probability of a column's value being NaN, given the fact another column value is NaN.
+the conditional probability of a record's value being NaN in a specific column, given the fact another value for the same record is missing at a different column.
 
-For a dataset with two columns `'A', 'B'` the conditional probability of a value from column `'A'` being NaN is:
+For a dataset with two columns `'A', 'B'` the conditional probability of a record having a missing value at column `'A'` is:
 
 $$P(A \text{ is NULL } | B \text{ is NULL}) = \frac{P(A \text{ is NULL } \cap B \text{ is NULL})}{P(B \text{ is NULL})}$$
 

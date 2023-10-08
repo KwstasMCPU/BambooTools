@@ -18,12 +18,14 @@ df = pd.DataFrame({
     'color': np.random.choice(['black', 'white', 'brown', 'gray'], n_records),
     'weight': np.random.randint(1, 100, n_records),
     'tail length': np.random.randint(1, 50, n_records),
-    'height': np.random.randint(10, 500, n_records)
+    'height': np.random.randint(10, 500, n_records),
+    'date_of_observation': pd.date_range(start='2022-01-01', end='2022-02-01',
+                                         periods=n_records)
 })
 
 # Insert NULL values in the 'animal', 'color', 'weight', 'tail length' and
 # 'height' columns
-for col, n_nulls in zip(df.columns, [2, 15, 20, 48, 17]):
+for col, n_nulls in zip(df.columns, [2, 15, 20, 48, 17, 0]):
     null_indices = np.random.choice(df.index, n_nulls, replace=False)
     df.loc[null_indices, col] = np.nan
 
@@ -34,7 +36,7 @@ print(df.bbt.completeness())
 print(df.bbt.completeness(by=['animal']))
 
 # get missing correlation matrix
-print(df.bbt.missing_corr_matrix().to_clipboard())
+print(df.bbt.missing_corr_matrix())
 
 # outlier boundaries per group
 penguins = sns.load_dataset("penguins")
