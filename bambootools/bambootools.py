@@ -122,9 +122,9 @@ class BambooToolsDfAccessor:
         return output
 
     def missing_corr_matrix(self) -> pd.DataFrame:
-        """Returns a missing correlations matrix. Calculates the conditional
+        """Returns the missing correlations matrix. Calculates the conditional
         probability of a record's value being NULL at a specific colunm given
-        the fact, another's column value is missing for the same record is.
+        the fact, another's column value is missing for the same record.
 
         A missing correlation matrix is a table, which states for every column
         the above mentioned contidional probability. In more details, if
@@ -159,6 +159,33 @@ class BambooToolsDfAccessor:
 
         matrix = pd.DataFrame(pairs_dict)
         return matrix.reindex(matrix.columns)
+
+    def duplication_summary(self, subset: List[str] = None,
+                            keep: Literal['first', False] = False
+                            ) -> pd.DataFrame:
+        """
+        Generates a duplication summary table. Calculates the number and
+        percentage of duplicate rows.
+
+        Parameters
+        ----------
+            subset : column label or sequence of labels, optional
+                Only consider certain columns for identifying duplicates, by
+                default use all of the columns.
+            keep : {'first', False}, default ``False``
+            Method to handle counts of duplicates:
+
+            - 'first' : Count all duplicates, except for the first
+              occurrence.
+            - ``False`` : Counts all duplicates.
+
+        Returns
+        -------
+        DataFrame
+            The duplication summary table
+
+        """
+        pass
 
     def outlier_bounds(self, method: Literal['std', 'iqr', 'percentiles'],
                        std_n: float = 3.0, factor: float = 1.5,
