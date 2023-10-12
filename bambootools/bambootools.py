@@ -88,17 +88,15 @@ class BambooToolsDfAccessor:
 
     def missing_corr_matrix(self) -> pd.DataFrame:
         """Returns a missing correlations matrix. Calculates the conditional
-        probability of a column being NULL given the fact another column is
-        NULL.
+        probability of a record's value being NULL at a specific colunm given
+        the fact, another's column value is missing for the same record is.
 
         A missing correlation matrix is a table, which states for every column
-        the probability of its values being NULL given the fact another's
-        column values are NULL. In more details, if comparing columns A and B,
-        it is the ratio between the number of records where both columns are
-        NULL, and the total number of NULL values in column B.
-
-        Note that the ratio between A and B is not equal to the ratio between
-        B and A.
+        the above mentioned contidional probability. In more details, if
+        examining the conditional probability of a record being NULL at column
+        A compared to another column B, it is the ratio between the probability
+        of the values of the same record being NULL in both the A and B columns
+        (intersection), and the probability of a record being NULL at column B.
 
         `P(A is NULL | B is NULL) = P(A is NULL & B is NULL) / P(B is NULL)`
 
