@@ -160,24 +160,16 @@ class BambooToolsDfAccessor:
         matrix = pd.DataFrame(pairs_dict)
         return matrix.reindex(matrix.columns)
 
-    def duplication_summary(self, subset: List[str] = None,
-                            keep: Literal['first', False] = False
-                            ) -> pd.DataFrame:
+    def duplication_summary(self, subset: List[str] = None) -> pd.DataFrame:
         """
         Generates a duplication summary table. Calculates the number and
         percentage of duplicate rows.
 
         Parameters
         ----------
-            subset : column label or sequence of labels, optional
-                Only consider certain columns for identifying duplicates, by
-                default use all of the columns.
-            keep : {'first', False}, default ``False``
-            Method to handle counts of duplicates:
-
-            - 'first' : Count all duplicates, except for the first
-              occurrence.
-            - ``False`` : Counts all duplicates.
+        subset : column label or sequence of labels, optional
+            Only consider certain columns for identifying duplicates, by
+            default use all of the columns.
 
         Returns
         -------
@@ -185,7 +177,31 @@ class BambooToolsDfAccessor:
             The duplication summary table
 
         """
-        pass
+        _df = self.pandas_obj.copy()
+        if not subset:
+            subset = _df.columns.to_list()
+        else:
+            if isinstance(subset, List):
+                raise AttributeError("`subset` arg must be a list of strings")
+
+        hashed_series = pd.util.hash_pandas_object(_df[subset],
+                                                   index=False)
+        total_records = len(hashed_series)
+        n_unique_records = hashed_series.nunique()
+        n_total_duplicate_records = hashed_series.duplicated(keep=False).sum()
+        frequency_of_records = hashed_series.value_counts()
+        n_unique_duplicate_records = (frequency_of_records > 1).sum()
+        n_unique_non_duplicated_records = (frequency_of_records == 1).sum()
+        # frequency_of_duplications = frequency_of_records.value_counts().\
+        # sort_index()
+        msg = """There are {} total records and {} unique records.
+        The {} have no duplications, while the rest {} account for {}
+        duplications in total.""".format(total_records,
+                                         n_unique_records,
+                                         n_unique_non_duplicated_records,
+                                         n_unique_duplicate_records,
+                                         n_total_duplicate_records)
+        return msg
 
     def outlier_bounds(self, method: Literal['std', 'iqr', 'percentiles'],
                        std_n: float = 3.0, factor: float = 1.5,
