@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v.0.4.0-beta]
+
+### Added
+
+- `duplication_summary()`
+- `duplication_frequency_table()`
+
+### Changed
+
+### Fixed
+
 ## [v.0.3.0-beta] - 2023-10-02
 
 ### Added
