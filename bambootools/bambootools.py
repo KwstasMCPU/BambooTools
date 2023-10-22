@@ -50,6 +50,19 @@ def _conditional_probability(data: pd.DataFrame,
     return p_a_conditional, p_b_conditional
 
 
+def _hash_table(df: pd.DataFrame, subset: List[str] = None) -> pd.Series:
+
+    if not subset:
+        subset = df.columns.to_list()
+    else:
+        if isinstance(subset, List):
+            raise AttributeError("`subset` arg must be a list of strings")
+
+    hashed_series = pd.util.hash_pandas_object(df[subset],
+                                               index=False)
+    return hashed_series
+
+
 @pd.api.extensions.register_dataframe_accessor("bbt")
 class BambooToolsDfAccessor:
     def __init__(self, pandas_obj: pd.DataFrame) -> None:
@@ -163,7 +176,19 @@ class BambooToolsDfAccessor:
     def duplication_summary(self, subset: List[str] = None) -> pd.DataFrame:
         """
         Generates a duplication summary table. Calculates the number and
-        percentage of duplicate rows.
+        percentage of duplicate rows. 
+
+        Summary table explained:
+
+        `total records`: Refers to the total row of the dataset.
+        `unique records`: Refers to the number of the unique records
+            of the dataset.
+        `unique records without duplications`: Refers to the number of unique
+            records which have no duplications.
+        `unique records with duplications`: Refers to the number of unique
+            records which have duplications.
+        `total duplicated records`: Referns to the number of the total
+            duplicated records.
 
         Parameters
         ----------
@@ -178,30 +203,89 @@ class BambooToolsDfAccessor:
 
         """
         _df = self.pandas_obj.copy()
-        if not subset:
-            subset = _df.columns.to_list()
-        else:
-            if isinstance(subset, List):
-                raise AttributeError("`subset` arg must be a list of strings")
+        hashed_series = _hash_table(_df, subset)
+        del _df
 
-        hashed_series = pd.util.hash_pandas_object(_df[subset],
-                                                   index=False)
         total_records = len(hashed_series)
         n_unique_records = hashed_series.nunique()
         n_total_duplicate_records = hashed_series.duplicated(keep=False).sum()
         frequency_of_records = hashed_series.value_counts()
         n_unique_duplicate_records = (frequency_of_records > 1).sum()
         n_unique_non_duplicated_records = (frequency_of_records == 1).sum()
-        # frequency_of_duplications = frequency_of_records.value_counts().\
-        # sort_index()
-        msg = """There are {} total records and {} unique records.
-        The {} have no duplications, while the rest {} account for {}
-        duplications in total.""".format(total_records,
-                                         n_unique_records,
-                                         n_unique_non_duplicated_records,
-                                         n_unique_duplicate_records,
-                                         n_total_duplicate_records)
-        return msg
+
+        output = pd.DataFrame(index=['total records', 'unique records',
+                                     'unique records without duplications',
+                                     'unique records with duplications',
+                                     'total duplicated records'],
+                              columns=['counts'],
+                              data=[total_records, n_unique_records,
+                                    n_unique_non_duplicated_records,
+                                    n_unique_duplicate_records,
+                                    n_total_duplicate_records])
+
+        return output
+
+    def duplication_frequency_table(self,
+                                    subset: List[str] = None) -> pd.DataFrame:
+        """
+        Generates a tables which states the frequency of records with
+        duplications. Categorizes the duplicated records according to their
+        number of duplications, and reports the frequency of those categories.
+
+        E.g.: if a record has three identical records (so 4 in including
+        itself) it is classed in the `4` category. Supposing that there are 5
+        records and each one of those have three identical records, then the
+        frequency of the `4` category will be 5.
+
+        Frequency table explained:
+
+        `d bins`: States the category of the duplicated records. `2` accounts
+            for pairs of duplicates (two indentical records), `3` for triples,
+            etc.
+        `frequency`: The frequency of the `d bins`.
+        `sum of duplications`: States for how many duplicated records those
+            categories generate.
+        `percentage to total duplications`: Is ratio between the
+        `sum of duplications` and to total number of duplicated values.
+
+        Parameters
+        ----------
+        subset : List[str], optional
+            _description_, by default None
+
+        Returns
+        -------
+        pd.DataFrame
+            _description_
+        """
+        _df = self.pandas_obj.copy()
+        hashed_series = _hash_table(_df, subset)
+        del _df
+
+        frquency_table = hashed_series.value_counts().\
+            value_counts().\
+            sort_index().\
+            to_frame(name='frequency')
+        frquency_table['sum of duplications'] = (frquency_table['frequency'] *
+                                                 frquency_table.index
+                                                 )
+        frquency_table['d bins'] = pd.cut(frquency_table.index,
+                                          bins=[2, 3, 4, 5, 6,
+                                                10, 15, 50, np.inf],
+                                          include_lowest=True,
+                                          labels=['2', '3', '4', '5',
+                                                  '[6, 10)', '[10, 15)',
+                                                  '[15, 50)', '50>'
+                                                  ],
+                                          right=False
+                                          )
+        frquency_table.dropna(subset=['d bins'], inplace=True)
+        
+        output = frquency_table.groupby(['d bins']).sum()
+        output['percentage to total duplications'] = (
+            output['sum of duplications'] /
+            output['sum of duplications'].sum())
+        return output
 
     def outlier_bounds(self, method: Literal['std', 'iqr', 'percentiles'],
                        std_n: float = 3.0, factor: float = 1.5,
