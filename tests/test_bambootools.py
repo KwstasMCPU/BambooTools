@@ -48,16 +48,16 @@ def test_init_dataframe(animals_dataset):
 def test_completeness(animals_dataset):
     result = animals_dataset.bbt.completeness()
     assert result.shape == (5, 3), "Wrong table dimensions."
-    assert result['count'].max() <= animals_dataset.shape[0], (
-        "Max value of non missing cannot exceed total number of records.")
-    assert result['perc'].max() <= 1.0, (
-        "Max value of perc cannot exceed 1.")
+    assert result['complete values'].max() <= animals_dataset.shape[0], (
+        "Max value of `complete values` cannot exceed total number of records.")
+    assert result['completeness ratio'].max() <= 1.0, (
+        "Max value of `completeness ratio` cannot exceed 1.")
 
 
 def test_completeness_per_group(animals_dataset):
     result = animals_dataset.bbt.completeness(by=['animal'])
     assert result.shape == (3, 12), "Wrong table dimensions."
-    assert result['weight']['perc'].max() <= 1.0, (
+    assert result['weight']['completeness ratio'].max() <= 1.0, (
         "Max value of perc cannot exceed 1.")
     # test if the counts were calculated correctly
     n_cats = animals_dataset['animal'].value_counts()['cat']

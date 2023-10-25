@@ -31,60 +31,53 @@ class BambooToolsDfAccessor:
         if not isinstance(obj, pd.DataFrame):
             raise AttributeError("Must be a pandas DataFrame")
 
-    def completeness(self, by: List[str] = None,
-                     format: bool = False) -> pd.DataFrame:
-        """Returns the completeness table of a dataframe. The returned columns
-        are: `count`, `perc` and `total`.
-            `count`: the non NULL values
-            `perc`: the ratio of total records to the `count`
-            `total`: the total records
-
-        Args:
-            * by (List[str], optional): List of columns to aggregate. If
-                passed the completeness per column is measured per group.
-                Defaults to None.
-            * format (bool, optional): If True the perc column is formated
-                to a percentage (eg 50.00%). Note that it returns a pandas
-                Styler object instead of a DataFrame.
-
-        Raises:
-            AttributeError: Checks if by is a list of string
-
-        Returns:
-            pd.DataFrame: The completeness dataframe
+    def completeness(self, by: List[str] = None) -> pd.DataFrame:
         """
+        Returns the completeness table of a dataframe. The returned columns
+        are:
+            * `complete values`: the number non NULL values per column.
+            * `completeness ratio`: the ratio of `complete values` to the
+              total number of records (column's length).
+            * `total`: the total number of records.
+            
+        Parameters
+        ----------
+        by : list of columns, default None
+            The list of column to aggragate. Produces the completeness metrics
+            per the groups specified on `by`.
+
+        Returns
+        -------
+        output : DataFrame
+            The completeness table.
+
+        Raises
+        ------
+        AttributeError
+            Rises `AttributeError` in case of wrong input for `by` argument.
+        """
+
         if by is None:
-            by = self._obj.columns.to_list()
-            counts = self._obj.groupby(by, dropna=False).\
-                apply(lambda x: x.notnull().sum()).sum()
-
-            perc = self._obj.groupby(by, dropna=False).\
-                apply(lambda x: x.notnull().sum()).sum() / self._obj.shape[0]
-
-            _df = pd.concat([counts, perc], axis=1).\
-                rename(columns={0: 'count',
-                                1: 'perc'
-                                }
-                       )
-            _df['total'] = self._obj.shape[0]
-
-            if format:
-                _df = _df.style.format({'perc': '{:.2%}'})
+            complete_values = self._obj.notnull()
+            total_records = self._obj.shape[0]
+            counts = complete_values.sum()
+            counts.name = 'complete values'
+            perce = complete_values.sum() / total_records
+            perce.name = 'completeness ratio'
+            output = counts.to_frame().join(perce)
+            output['total'] = total_records
         else:
             if not isinstance(by, List):
                 raise AttributeError("`by` arg must be a list of strings")
 
-            _df = self._obj.groupby(by, dropna=False).\
-                agg([('count', lambda x: x.notnull().sum()),
-                     ('perc', lambda x: x.notnull().sum()/x.shape[0]),
+            output = self._obj.groupby(by, dropna=False).\
+                agg([('complete values', lambda x: x.notnull().sum()),
+                     ('completeness ratio',
+                      lambda x: x.notnull().sum() / x.shape[0]),
                      ('total', 'size')
                      ]
                     )
-            if format:
-                format_dict = dict([(t, '{:.2%}') for t in
-                                    _df.columns if t[1] == 'perc'])
-                _df = _df.style.format(format_dict)
-        return _df
+        return output
 
     def missing_corr_matrix(self) -> pd.DataFrame:
         """Returns a missing correlations matrix. Calculates the conditional
