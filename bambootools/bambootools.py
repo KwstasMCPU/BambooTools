@@ -8,6 +8,48 @@ from itertools import combinations
 from typing import List, Tuple, Literal
 
 
+def _conditional_probability(data: pd.DataFrame,
+                             col_a: str,
+                             col_b: str) -> Tuple[float, float]:
+    """
+    Calculates the probability of a column's value being NULL given the
+    fact another's column value is NULL (conditional probability).
+
+    Parameters
+    ----------
+    _df : pd.DataFrame
+        The dataset holding the column to examine
+    col_a : str
+        Column name of the first column
+    col_b : str
+        Column name of the second column
+
+    Returns
+    -------
+    p_a_conditional, p_b_conditional : Tuple[float, float]
+        The conditional probabilities for the values of `col_a` and `col_b`
+        being NULL respectively
+    """
+    col_a_mask = data[col_a].isna()
+    col_b_mask = data[col_b].isna()
+    both_na = (col_a_mask & col_b_mask).sum()
+    p_a_being_na = col_a_mask.sum() / data.shape[0]
+    p_b_being_na = col_b_mask.sum() / data.shape[0]
+    p_both_being_na = both_na / data.shape[0]
+    # check for for possible division with zero warning
+    # column b has no NaN
+    if p_b_being_na == 0:
+        p_a_conditional = np.nan
+    else:
+        p_a_conditional = p_both_being_na / p_b_being_na
+    # column a has no NaN
+    if p_a_being_na == 0:
+        p_b_conditional = np.nan
+    else:
+        p_b_conditional = p_both_being_na / p_a_being_na
+    return p_a_conditional, p_b_conditional
+
+
 @pd.api.extensions.register_dataframe_accessor("bbt")
 class BambooToolsDfAccessor:
     def __init__(self, pandas_obj: pd.DataFrame) -> None:
@@ -110,9 +152,9 @@ class BambooToolsDfAccessor:
         for col_a, col_b in columns_pairs_comb:
             # calculate the conditional probabilities for each columns
             # pair
-            result = self._conditional_probability(_df=_df,
-                                                   col_a=col_a,
-                                                   col_b=col_b)
+            result = _conditional_probability(data=_df,
+                                              col_a=col_a,
+                                              col_b=col_b)
             if col_a in pairs_dict:
                 pairs_dict[col_a].update({col_b: result[0]})
             else:
@@ -375,45 +417,6 @@ class BambooToolsDfAccessor:
         lower_bound = _df.quantile(lower_thresh)
         upper_bound = _df.quantile(upper_thresh)
         return pd.Series({'lower': lower_bound, 'upper': upper_bound})
-
-    def _conditional_probability(self,
-                                 _df: pd.DataFrame,
-                                 col_a: str,
-                                 col_b: str) -> Tuple[float, float]:
-        """Calculates the probability of a column's value being NULL given the
-        fact another's column value is NULL (conditional probability).
-
-        Args:
-            * _df (pd.DataFrame): The dataframe holding the both columns
-            * col_a (str): Column name of the first column
-            * col_b (str): Column name of the second column
-
-        Returns:
-            Tuple[float, float]: The conditional probabilities for a value of
-                `col_a` and `col_b` being NULL respectively
-        """
-        col_a_mask = _df[col_a].isna()
-        col_b_mask = _df[col_b].isna()
-        both_na = (col_a_mask & col_b_mask).sum()
-        p_a_being_na = col_a_mask.sum() / _df.shape[0]
-        p_b_being_na = col_b_mask.sum() / _df.shape[0]
-        p_both_being_na = both_na / _df.shape[0]
-        # check for for possible division with zero warning
-        msg = """`{}` has no NULL values.
-        Conditional probability for `{}` set to NaN."""
-        # column b has no NaN
-        if p_b_being_na == 0:
-            print(msg.format(col_b, col_a))
-            p_a_conditional = np.nan
-        else:
-            p_a_conditional = p_both_being_na / p_b_being_na
-        # column a has no NaN
-        if p_a_being_na == 0:
-            print(msg.format(col_a, col_b))
-            p_b_conditional = np.nan
-        else:
-            p_b_conditional = p_both_being_na / p_a_being_na
-        return p_a_conditional, p_b_conditional
 
 
 @pd.api.extensions.register_series_accessor("bbt")
