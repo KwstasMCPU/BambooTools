@@ -44,24 +44,23 @@ df = pd.DataFrame({'Animal': ['Falcon', 'Falcon',
 # check the completeness of the dataset per column
 print(df.bbt.completeness())
 ```
-|           | perc               | count | total |
-|-----------|--------------------|-------|-------|
-| Animal    | 1.0                | 6     | 6     |
-| Max Speed | 0.6666666666666666 | 4     | 6     |
-| Weight    | 0.6666666666666666 | 4     | 6     |
+|           | complete values | completeness ratio | total |
+|-----------|-----------------|--------------------|-------|
+| Animal    | 6               | 1.0                | 6     |
+| Max Speed | 4               | 0.6666666666666666 | 6     |
+| Weight    | 4               | 0.6666666666666666 | 6     |
 
 Specifying a list of categorical columns would result the completeness per category:
 ```python
 # check the completeness of the datataset per category
 print(df.bbt.completeness(by=['Animal']))
 ```
-|        | Max Speed   |           |           | Weight      |        |        |
-|--------|-------------|-----------|-----------|-------------|--------|--------|
-| Animal | perc        | count     | total     | perc        | count  | total  |
-|        |             |           |           |             |        |        |
-| Falcon | 0.666666667 | 2         | 3         | 0.666666667 | 2      | 3      |
-| Lama   | 0           | 0         | 1         | 1           | 1      | 1      |
-| Parrot | 1           | 2         | 2         | 0.5         | 1      | 2      |
+|        | Max Speed       |                    |       | Weight          |                    |       |
+|--------|-----------------|--------------------|-------|-----------------|--------------------|-------|
+| Animal | complete values | completeness ratio | total | complete values | completeness ratio | total |
+| Falcon | 2               | 0.6666666666666666 | 3     | 2               | 0.6666666666666666 | 3     |
+| Lama   | 0               | 0.0                | 1     | 1               | 1.0                | 1     |
+| Parrot | 2               | 1.0                | 2     | 1               | 0.5                | 2     |
 
 ## Missing values correlation matrix
 `missing_corr_matrix()` This matrix aims to help to pintpoint relationships between missing values of different columns. Calculates
