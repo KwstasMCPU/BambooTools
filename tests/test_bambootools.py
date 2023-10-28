@@ -84,8 +84,26 @@ def test_outlier_summary(penguins_dataset):
     n_penguins_grp = penguins_dataset.groupby(['sex', 'species']).size()
     assert n_penguins_grp['Female', 'Adelie'] == result['total_records'].\
         loc[('Female', 'Adelie'), 'bill_depth_mm'], (
-            "Total counts per category must equal the original data counts."
-        )
+            "Total counts per category must equal the original data counts.")
+
+
+def test_duplication_summary(penguins_dataset):
+    subset = ['sex', 'species', 'island']
+    result = penguins_dataset.bbt.duplication_summary(subset=subset)
+    total_duplicates = penguins_dataset.\
+        duplicated(subset=subset, keep=False).sum()
+    assert result.shape == (5, 1), "Shape should be 5, 1."
+    assert result.loc['total records'].item() == penguins_dataset.shape[0], (
+        "Total records should equal dataframes length."
+    )
+    assert result.loc['total duplicated records'].item() == total_duplicates, (
+        "Total duplicates must equal to result of pd.duplicated()"
+    )
+
+
+def test_duplication_frequency_table(penguins_dataset):
+    result = penguins_dataset.bbt.duplication_frequency_table()
+    assert result.shape == (8, 3), "Shape should be 8, 3"
 
 
 # tests for BambooToolsSeriesAccessor

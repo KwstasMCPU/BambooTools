@@ -9,11 +9,30 @@ from typing import List, Tuple, Literal
 
 
 def _hash_table(df: pd.DataFrame, subset: List[str] = None) -> pd.Series:
+    """Returns a data hash of the given DataFrame, excluding the index.
+
+    Parameters
+    ----------
+    df : DataFrame
+        The dataframe to be hashed
+    subset :  list of a column label or sequence of labels, optinal
+        The subset of columns to generate the hash series.
+
+    Returns
+    -------
+    Series of uint64
+        Series with same length as the object.
+
+    Raises
+    ------
+    AttributeError
+        If subset is not a list error is raised
+    """
 
     if not subset:
         subset = df.columns.to_list()
     else:
-        if isinstance(subset, List):
+        if not isinstance(subset, List):
             raise AttributeError("`subset` arg must be a list of strings")
 
     hashed_series = pd.util.hash_pandas_object(df[subset],
@@ -141,23 +160,23 @@ class BambooToolsDfAccessor:
     def duplication_summary(self, subset: List[str] = None) -> pd.DataFrame:
         """
         Generates a duplication summary table. Calculates the number and
-        percentage of duplicate rows. 
+        percentage of duplicate rows.
 
         Summary table explained:
 
-        `total records`: Refers to the total row of the dataset.
-        `unique records`: Refers to the number of the unique records
+            * `total records`: Refers to the total row of the dataset.
+            * `unique records`: Refers to the number of the unique records
             of the dataset.
-        `unique records without duplications`: Refers to the number of unique
-            records which have no duplications.
-        `unique records with duplications`: Refers to the number of unique
-            records which have duplications.
-        `total duplicated records`: Referns to the number of the total
+            * `unique records without duplications`: Refers to the number of
+            unique records which have no duplications.
+            * `unique records with duplications`: Refers to the number of
+            unique records which have duplications.
+            * `total duplicated records`: Referns to the number of the total
             duplicated records.
 
         Parameters
         ----------
-        subset : column label or sequence of labels, optional
+        subset : list of a column label or sequence of labels, optional
             Only consider certain columns for identifying duplicates, by
             default use all of the columns.
 
@@ -197,21 +216,21 @@ class BambooToolsDfAccessor:
         duplications. Categorizes the duplicated records according to their
         number of duplications, and reports the frequency of those categories.
 
-        E.g.: if a record has three identical records (so 4 in including
-        itself) it is classed in the `4` category. Supposing that there are 5
-        records and each one of those have three identical records, then the
-        frequency of the `4` category will be 5.
+        E.g.: if a record has 1 identical record (so 2 in including itself)
+        it is classed in the `2` category (`d bins` column.) If there are 10
+        of those pairs, then the frequency is `10` and they account for 20
+        duplications `sum of duplications`.
 
         Frequency table explained:
 
-        `d bins`: States the category of the duplicated records. `2` accounts
-            for pairs of duplicates (two indentical records), `3` for triples,
-            etc.
-        `frequency`: The frequency of the `d bins`.
-        `sum of duplications`: States for how many duplicated records those
-            categories generate.
-        `percentage to total duplications`: Is ratio between the
-        `sum of duplications` and to total number of duplicated values.
+            * `n identical bins`: States the category of the duplicated
+            records. `2` accounts for pairs of duplicates (two indentical
+            records), `3` for triples, etc.
+            * `frequency`: The frequency of the `d bins`.
+            * `sum of duplications`: States for how many duplicated records
+            those categories generate.
+            * `percentage to total duplications`: Is ratio between the
+            * `sum of duplications` and to total number of duplicated values.
 
         Parameters
         ----------
@@ -234,19 +253,20 @@ class BambooToolsDfAccessor:
         frquency_table['sum of duplications'] = (frquency_table['frequency'] *
                                                  frquency_table.index
                                                  )
-        frquency_table['d bins'] = pd.cut(frquency_table.index,
-                                          bins=[2, 3, 4, 5, 6,
-                                                10, 15, 50, np.inf],
-                                          include_lowest=True,
-                                          labels=['2', '3', '4', '5',
-                                                  '[6, 10)', '[10, 15)',
-                                                  '[15, 50)', '50>'
-                                                  ],
-                                          right=False
-                                          )
-        frquency_table.dropna(subset=['d bins'], inplace=True)
-        
-        output = frquency_table.groupby(['d bins']).sum()
+        frquency_table['n identical bins'] = pd.cut(frquency_table.index,
+                                                    bins=[2, 3, 4, 5, 6,
+                                                          10, 15, 50, np.inf],
+                                                    include_lowest=True,
+                                                    labels=['2', '3',
+                                                            '4', '5',
+                                                            '[6, 10)',
+                                                            '[10, 15)',
+                                                            '[15, 50)',
+                                                            '50>'],
+                                                    right=False)
+        frquency_table.dropna(subset=['n identical bins'], inplace=True)
+
+        output = frquency_table.groupby(['n identical bins']).sum()
         output['percentage to total duplications'] = (
             output['sum of duplications'] /
             output['sum of duplications'].sum())
@@ -306,8 +326,7 @@ class BambooToolsDfAccessor:
                 bounds = _df.apply(lambda group: group.apply(
                     self._outlier_detector_percentiles,
                     lower_thresh=lower_thresh,
-                    upper_thresh=upper_thresh
-                    )).unstack()
+                    upper_thresh=upper_thresh)).unstack()
             return bounds
 
         else:
@@ -409,9 +428,7 @@ class BambooToolsDfAccessor:
                                     ).rename(columns={
                                         0: 'n_outliers_upper',
                                         1: 'n_outliers_lower',
-                                        2: 'n_non_outliers'
-                                        }
-                                             )
+                                        2: 'n_non_outliers'})
         # add additional columns in the summary table
         qry_total_outliers = 'n_outliers_upper + n_outliers_lower'
         summary_tbl['n_total_outliers'] = summary_tbl.eval(qry_total_outliers)
