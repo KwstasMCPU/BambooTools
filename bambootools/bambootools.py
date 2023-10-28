@@ -50,6 +50,38 @@ def _conditional_probability(data: pd.DataFrame,
     return p_a_conditional, p_b_conditional
 
 
+def _hash_table(df: pd.DataFrame, subset: List[str] = None) -> pd.Series:
+    """Returns a data hash of the given DataFrame, excluding the index.
+
+    Parameters
+    ----------
+    df : DataFrame
+        The dataframe to be hashed
+    subset :  list of a column label or sequence of labels, optinal
+        The subset of columns to generate the hash series.
+
+    Returns
+    -------
+    Series of uint64
+        Series with same length as the object.
+
+    Raises
+    ------
+    AttributeError
+        If subset is not a list error is raised
+    """
+
+    if not subset:
+        subset = df.columns.to_list()
+    else:
+        if not isinstance(subset, List):
+            raise AttributeError("`subset` arg must be a list of strings")
+
+    hashed_series = pd.util.hash_pandas_object(df[subset],
+                                               index=False)
+    return hashed_series
+
+
 @pd.api.extensions.register_dataframe_accessor("bbt")
 class BambooToolsDfAccessor:
     def __init__(self, pandas_obj: pd.DataFrame) -> None:
@@ -122,9 +154,9 @@ class BambooToolsDfAccessor:
         return output
 
     def missing_corr_matrix(self) -> pd.DataFrame:
-        """Returns a missing correlations matrix. Calculates the conditional
+        """Returns the missing correlations matrix. Calculates the conditional
         probability of a record's value being NULL at a specific colunm given
-        the fact, another's column value is missing for the same record is.
+        the fact, another's column value is missing for the same record.
 
         A missing correlation matrix is a table, which states for every column
         the above mentioned contidional probability. In more details, if
@@ -159,6 +191,121 @@ class BambooToolsDfAccessor:
 
         matrix = pd.DataFrame(pairs_dict)
         return matrix.reindex(matrix.columns)
+
+    def duplication_summary(self, subset: List[str] = None) -> pd.DataFrame:
+        """
+        Generates a duplication summary table. Calculates the number and
+        percentage of duplicate rows.
+
+        Summary table explained:
+
+            * `total records`: Refers to the total row of the dataset.
+            * `unique records`: Refers to the number of the unique records
+            of the dataset.
+            * `unique records without duplications`: Refers to the number of
+            unique records which have no duplications.
+            * `unique records with duplications`: Refers to the number of
+            unique records which have duplications.
+            * `total duplicated records`: Referns to the number of the total
+            duplicated records.
+
+        Parameters
+        ----------
+        subset : list of a column label or sequence of labels, optional
+            Only consider certain columns for identifying duplicates, by
+            default use all of the columns.
+
+        Returns
+        -------
+        DataFrame
+            The duplication summary table
+
+        """
+        _df = self.pandas_obj.copy()
+        hashed_series = _hash_table(_df, subset)
+        del _df
+
+        total_records = len(hashed_series)
+        n_unique_records = hashed_series.nunique()
+        n_total_duplicate_records = hashed_series.duplicated(keep=False).sum()
+        frequency_of_records = hashed_series.value_counts()
+        n_unique_duplicate_records = (frequency_of_records > 1).sum()
+        n_unique_non_duplicated_records = (frequency_of_records == 1).sum()
+
+        output = pd.DataFrame(index=['total records', 'unique records',
+                                     'unique records without duplications',
+                                     'unique records with duplications',
+                                     'total duplicated records'],
+                              columns=['counts'],
+                              data=[total_records, n_unique_records,
+                                    n_unique_non_duplicated_records,
+                                    n_unique_duplicate_records,
+                                    n_total_duplicate_records])
+
+        return output
+
+    def duplication_frequency_table(self,
+                                    subset: List[str] = None) -> pd.DataFrame:
+        """
+        Generates a tables which states the frequency of records with
+        duplications. Categorizes the duplicated records according to their
+        number of duplications, and reports the frequency of those categories.
+
+        E.g.: if a record has 1 identical record (so 2 in including itself)
+        it is classed in the `2` category (`d bins` column.) If there are 10
+        of those pairs, then the frequency is `10` and they account for 20
+        duplications `sum of duplications`.
+
+        Frequency table explained:
+
+            * `n identical bins`: States the category of the duplicated
+            records. `2` accounts for pairs of duplicates (two indentical
+            records), `3` for triples, etc.
+            * `frequency`: The frequency of the `d bins`.
+            * `sum of duplications`: States for how many duplicated records
+            those categories generate.
+            * `percentage to total duplications`: Is ratio between the
+            * `sum of duplications` and to total number of duplicated values.
+
+        Parameters
+        ----------
+        subset : List[str], optional
+            _description_, by default None
+
+        Returns
+        -------
+        pd.DataFrame
+            _description_
+        """
+        _df = self.pandas_obj.copy()
+        hashed_series = _hash_table(_df, subset)
+        del _df
+
+        frquency_table = hashed_series.value_counts().\
+            value_counts().\
+            sort_index().\
+            to_frame(name='frequency')
+        frquency_table['sum of duplications'] = (frquency_table['frequency'] *
+                                                 frquency_table.index
+                                                 )
+        frquency_table['n identical bins'] = pd.cut(frquency_table.index,
+                                                    bins=[2, 3, 4, 5, 6,
+                                                          10, 15, 50, np.inf],
+                                                    include_lowest=True,
+                                                    labels=['2', '3',
+                                                            '4', '5',
+                                                            '[6, 10)',
+                                                            '[10, 15)',
+                                                            '[15, 50)',
+                                                            '50>'],
+                                                    right=False)
+        frquency_table.dropna(subset=['n identical bins'], inplace=True)
+
+        output = frquency_table.groupby(['n identical bins']).sum()
+        output['percentage to total duplications'] = (
+            output['sum of duplications'] /
+            output['sum of duplications'].sum())
+        return output
 
     def outlier_bounds(self, method: Literal['std', 'iqr', 'percentiles'],
                        std_n: float = 3.0, factor: float = 1.5,
@@ -214,8 +361,7 @@ class BambooToolsDfAccessor:
                 bounds = _df.apply(lambda group: group.apply(
                     self._outlier_detector_percentiles,
                     lower_thresh=lower_thresh,
-                    upper_thresh=upper_thresh
-                    )).unstack()
+                    upper_thresh=upper_thresh)).unstack()
             return bounds
 
         else:
@@ -317,9 +463,7 @@ class BambooToolsDfAccessor:
                                     ).rename(columns={
                                         0: 'n_outliers_upper',
                                         1: 'n_outliers_lower',
-                                        2: 'n_non_outliers'
-                                        }
-                                             )
+                                        2: 'n_non_outliers'})
         # add additional columns in the summary table
         qry_total_outliers = 'n_outliers_upper + n_outliers_lower'
         summary_tbl['n_total_outliers'] = summary_tbl.eval(qry_total_outliers)
