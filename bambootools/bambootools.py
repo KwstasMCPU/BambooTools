@@ -17,19 +17,20 @@ def _conditional_probability(data: pd.DataFrame,
 
     Parameters
     ----------
-    _df : pd.DataFrame
-        The dataset holding the column to examine
+    _df : DataFrame
+        The dataset holding the column to examine.
     col_a : str
-        Column name of the first column
+        Column name of the first column.
     col_b : str
-        Column name of the second column
+        Column name of the second column.
 
     Returns
     -------
-    p_a_conditional, p_b_conditional : Tuple[float, float]
+    Tuple[float, float]
         The conditional probabilities for the values of `col_a` and `col_b`
-        being NULL respectively
+        being NULL respectively.
     """
+
     col_a_mask = data[col_a].isna()
     col_b_mask = data[col_b].isna()
     both_na = (col_a_mask & col_b_mask).sum()
@@ -68,7 +69,7 @@ def _hash_table(df: pd.DataFrame, subset: List[str] = None) -> pd.Series:
     Raises
     ------
     AttributeError
-        If subset is not a list error is raised
+        Raises error if `subset` is not a list.
     """
 
     if not subset:
@@ -93,15 +94,20 @@ class BambooToolsDfAccessor:
         return self._obj
 
     @staticmethod
-    def _validate(obj) -> None:
-        """Validate that the passed object is a pandas Dataframe
-
-        Args:
-            * obj: Object passed
-
-        Raises:
-            AttributeError: Prompts the user that pd.DataFrame should be used
+    def _validate(obj: pd.DataFrame) -> None:
         """
+        Validates if the passed object is a pandas Dataframe
+
+        Parameters
+        ----------
+        obj : Dataframe
+
+        Raises
+        ------
+        AttributeError
+            Raises error if the object is not a pandas DataFrame.
+        """
+
         if not isinstance(obj, pd.DataFrame):
             raise AttributeError("Must be a pandas DataFrame")
 
@@ -113,7 +119,7 @@ class BambooToolsDfAccessor:
             * `completeness ratio`: the ratio of `complete values` to the
               total number of records (column's length).
             * `total`: the total number of records.
-            
+
         Parameters
         ----------
         by : list of columns, default None
@@ -122,13 +128,13 @@ class BambooToolsDfAccessor:
 
         Returns
         -------
-        output : DataFrame
+        DataFrame
             The completeness table.
 
         Raises
         ------
         AttributeError
-            Rises `AttributeError` in case of wrong input for `by` argument.
+            Raises error in case of wrong input for `by` argument.
         """
 
         if by is None:
@@ -154,7 +160,8 @@ class BambooToolsDfAccessor:
         return output
 
     def missing_corr_matrix(self) -> pd.DataFrame:
-        """Returns the missing correlations matrix. Calculates the conditional
+        """
+        Returns the missing correlations matrix. Calculates the conditional
         probability of a record's value being NULL at a specific colunm given
         the fact, another's column value is missing for the same record.
 
@@ -167,10 +174,13 @@ class BambooToolsDfAccessor:
 
         `P(A is NULL | B is NULL) = P(A is NULL & B is NULL) / P(B is NULL)`
 
-        Returns:
-            pd.DataFrame: Returns an n x n matrix, with n equals the number of
-                the initial dataframe's columns.
+        Returns
+        -------
+        DataFrame
+            Returns an `n x n` matrix, with `n` equals the number of
+            the initial dataframe's columns.
         """
+
         _df = self._obj
         columns_pairs_comb = list(combinations(_df.columns, 2))
         pairs_dict = {}
@@ -218,9 +228,9 @@ class BambooToolsDfAccessor:
         Returns
         -------
         DataFrame
-            The duplication summary table
-
+            The duplication summary table.
         """
+
         _df = self.pandas_obj.copy()
         hashed_series = _hash_table(_df, subset)
         del _df
@@ -247,14 +257,14 @@ class BambooToolsDfAccessor:
     def duplication_frequency_table(self,
                                     subset: List[str] = None) -> pd.DataFrame:
         """
-        Generates a tables which states the frequency of records with
+        Generates a table which states the frequency of records with
         duplications. Categorizes the duplicated records according to their
         number of duplications, and reports the frequency of those categories.
 
         E.g.: if a record has 1 identical record (so 2 in including itself)
-        it is classed in the `2` category (`d bins` column.) If there are 10
-        of those pairs, then the frequency is `10` and they account for 20
-        duplications `sum of duplications`.
+        it is classed in the `2` category (`n identical bins` column.) If there
+        are 10 of those pairs, the frequency is `10` and they account for
+        20 duplications (`sum of duplications` equals 20).
 
         Frequency table explained:
 
@@ -269,14 +279,16 @@ class BambooToolsDfAccessor:
 
         Parameters
         ----------
-        subset : List[str], optional
-            _description_, by default None
+        subset : list of a column label or sequence of labels, optional
+            Only consider certain columns for identifying duplicates, by
+            default use all of the columns.
 
         Returns
         -------
-        pd.DataFrame
-            _description_
+        DataFrame
+            A table with metrics regarding the duplicated columns.
         """
+
         _df = self.pandas_obj.copy()
         hashed_series = _hash_table(_df, subset)
         del _df
@@ -310,38 +322,50 @@ class BambooToolsDfAccessor:
     def outlier_bounds(self, method: Literal['std', 'iqr', 'percentiles'],
                        std_n: float = 3.0, factor: float = 1.5,
                        lower_thresh: float = 0.0, upper_thresh: float = 1.0,
-                       by: List = None
+                       by: List['str'] = None
                        ) -> pd.DataFrame:
-        """Returns the outlier boundaries of the given dataframe for every
-        numerical column. Outlier boundaries are defined as the values for
-        which any other value above or below is considered as an outlier.
-
-        Args:
-            * method ({'std', 'iqr', 'percentiles'}): Which outlier method
-                to be used.
-                - 'std': Calculates the mean and standard deviation. A value
-                becomes an outlier if exceeds the mean more than `std_n`
-                standard deviations. Use if you assume that your data are
-                normally distributed.
-                - 'iqr': Calculates the IQR, then considers as an outlier
-                every value being `factor`*IQR below or upper the 25%, 75%
-                percentiles respectively.
-                - 'percentiles': Detects as outliers, every value being below
-                or upper the given percentiles.
-            * std_n (float, optional): The number of standard deviations to be
-                used in the `std` method. Defaults to 3.0.
-            * factor (float, optional): The factor of IQR to be used in the
-                `iqr` method. Defaults to 1.5.
-            * lower_thresh (float, optional): The lower percentile threshold
-                to be used in the `percentiles` method. Defaults to 0.0.
-            * upper_thresh (float, optional): The upper percentile threshold
-                to be used in the `percentiles` method. Defaults to 1.0.
-            * by (List[str], optional): If the names of categorical columns are
-                given, then the boundaries are calculated per group.
-
-        Returns:
-            pd.DataFrame: A table of the lower and upper boundary values
         """
+        Returns the outlier boundaries of the given dataframe for every
+        numerical column. Outlier boundaries are defined as the values for
+        which any other value above or below is considered an outlier.
+
+        Parameters
+        ----------
+        method : {'std', 'iqr', 'percentiles'}
+            Determines which outlier method to be used.
+
+            * `std`: Calculates the mean and standard deviation. A value
+            becomes an outlier if exceeds the mean for more than `std_n`
+            standard deviations. Use if you assume that your data are
+            normally distributed.
+            * `iqr`: Calculates the IQR, then considers as an outlier
+            every value being `factor`*IQR below or upper the 25%, 75%
+            percentiles respectively.
+            * `percentiles`: Detects as outliers, every value being below
+            or upper the given percentiles.
+
+        std_n : float, default 3.0
+            The number of standard deviations to be used in order to determine 
+            if a value is an outlier. Used in the `std` method.
+        factor : float, default 1.5
+            The factor of IQR to be used in order to determine if a value is
+            and outlier. Used in the `iqr` method.
+        lower_thresh : float, default 0.0
+            The lower percentile threshold to be used in the `percentiles`
+            method.
+        upper_thresh : float, default 1.0
+            The upper percentile threshold to be used in the `percentiles`
+            method.
+        by : list of columns, default None
+            The list of column to aggragate. Produces the outlier bounds
+            metrics per the groups specified on `by`.
+
+        Returns
+        -------
+        DataFrame
+            The dataframe table with the boundaries per column.
+        """
+        
         _df = self.pandas_obj.copy()
         # check if to group by per with any categorical column
         if by:
@@ -387,35 +411,57 @@ class BambooToolsDfAccessor:
                         lower_thresh: float = 0.0, upper_thresh: float = 1.0,
                         by: List = None
                         ) -> pd.DataFrame:
-        """Returns an outlier summary table (counts of outliers) for upper and
-        lower bounds. Utilises existing functions.
-
-        Args:
-            * method ({'std', 'iqr', 'percentiles'}): Which outlier method
-                to be used.
-                - 'std': Calculates the mean and standard deviation. A value
-                becomes an outlier if exceeds the mean more than `std_n`
-                standard deviations. Use if you assume that your data are
-                normally distributed.
-                - 'iqr': Calculates the IQR, then considers as an outlier
-                every value being `factor`*IQR below or upper the 25%, 75%
-                percentiles respectively.
-                - 'percentiles': Detects as outliers, every value being below
-                or upper the given percentiles.
-            * std_n (float, optional): The number of standard deviations to be
-                used in the `std` method. Defaults to 3.0.
-            * factor (float, optional): The factor of IQR to be used in the
-                `iqr` method. Defaults to 1.5.
-            * lower_thresh (float, optional): The lower percentile threshold
-                to be used in the `percentiles` method. Defaults to 0.0.
-            * upper_thresh (float, optional): The upper percentile threshold
-                to be used in the `percentiles` method. Defaults to 1.0.
-            * by (List[str], optional): If the names of categorical columns are
-                given, then the boundaries are calculated per group.
-
-        Returns:
-            pd.DataFrame: The outlier summary table
         """
+        Generates an outlier summary table. The outlier summary table produces
+        metrics regarding the outliers values of the dataset. It uses different
+        methods to define a values as an outlier.
+        
+        Outlier summary table explained:
+        
+            * n_outliers_upper: The number of outliers existing above the upper
+            limit.
+            * n_outliers_lower: The number of outliers existing below the lower
+            limit.
+            * n_non_outliers: The number of non outlier values.
+            * total_records: The total records of the dataset.
+
+        Parameters
+        ----------
+        method : {'std', 'iqr', 'percentiles'}
+            Determines which outlier method to be used.
+
+            * `std`: Calculates the mean and standard deviation. A value
+            becomes an outlier if exceeds the mean for more than `std_n`
+            standard deviations. Use if you assume that your data are
+            normally distributed.
+            * `iqr`: Calculates the IQR, then considers as an outlier
+            every value being `factor`*IQR below or upper the 25%, 75%
+            percentiles respectively.
+            * `percentiles`: Detects as outliers, every value being below
+            or upper the given percentiles.
+        
+        std_n : float, default 3.0
+            The number of standard deviations to be used in order to determine
+            if a value is an outlier. Used in the `std` method.
+        factor : float, default 1.5
+            The factor of IQR to be used in order to determine if a value is
+            and outlier. Used in the `iqr` method.
+        lower_thresh : float, default 0.0
+            The lower percentile threshold to be used in the `percentiles`
+            method.
+        upper_thresh : float, default 1.0
+            The upper percentile threshold to be used in the `percentiles`
+            method.
+        by : list of columns, default None
+            The list of column to aggragate. Produces the outlier bounds
+            metrics per the groups specified on `by`.
+
+        Returns
+        -------
+        DataFrame
+            The outlier summary dataframe.
+        """
+        
         bounds = self.outlier_bounds(method, std_n, factor,
                                      lower_thresh, upper_thresh, by)
         outlier_counts = {}
@@ -475,20 +521,27 @@ class BambooToolsDfAccessor:
                               _df: pd.DataFrame = None,
                               std_n: float = 3.0
                               ) -> pd.Series:
-        """Returns the upper and lower boundaries which are used to class a
+        """
+        Returns the upper and lower boundaries which are used to class a
         value as an outlier. The boundaries are caclulated as `std_n` times
         away from the mean.
-        Note: Not suitable for data which do not follow normal distribution.
+        
+        Note: It is not suitable for data which do not follow normal
+        distribution.
 
-        Args:
-            * _df (pd.DataFrame, optional): If called iternally it is passed as
-                an argument. Defaults to None.
-            * std_n (float, optional): The number of standard deviations to be
-                used in the `std` method. Defaults to 3.0.
+        Parameters
+        ----------
+        _df : DataFrame, default None
+            If called iternally it is passed as an argument.
+        std_n : float, default 3.0
+            The number of standard deviations to be used in the `std` method.
 
-        Returns:
-            pd.Series: The lower and upper bound
+        Returns
+        -------
+        Series
+            The lower and upper outlier boundaries.
         """
+        
         if _df is None:
             _df = self._obj
             _df = _df.select_dtypes(exclude=['category', 'object'])
@@ -503,19 +556,23 @@ class BambooToolsDfAccessor:
                               _df: pd.DataFrame = None,
                               factor: float = 1.5
                               ) -> pd.Series:
-        """Returns the upper and lower boundaries which are used to class a
-        value as an outlier. The boundaries are defined as the points, which
+        """
+        Returns the upper and lower boundaries which are used to class a
+        value as an outlier. The boundaries are defined as the values, which
         are `factor` times the IQR below and above the Q1 and Q3 quartiles
         respectively.
 
-        Args:
-            * _df (pd.DataFrame, optional): If called iternally it is passed as
-                an argument. Defaults to None.
-            * std_n (float, factor): The multiplayer of the IQR.
-                Defaults to 1.5.
+        Parameters
+        ----------
+        _df : DataFrame, default None
+            If called iternally it is passed as an argument.
+        factor : float, default 1.5
+            The multiplayer of the IQR.
 
-        Returns:
-            pd.Series: The lower and upper bound
+        Returns
+        -------
+        Series
+            The lower and upper outlier boundaries.
         """
         if _df is None:
             _df = self._obj
@@ -533,24 +590,36 @@ class BambooToolsDfAccessor:
                                       lower_thresh: float = 0.0,
                                       upper_thresh: float = 1.0
                                       ) -> pd.Series:
-        """Returns the upper and lower boundaries which are used to class a
-        value as an outlier. The boundaries are calculated as the returd values
+        """
+        Returns the upper and lower boundaries which are used to class a
+        value as an outlier. The boundaries are defined as the values
         at the given `lower_thesh` and `upper_thresh` percentiles.
 
-        Args:
-            * _df (pd.DataFrame, optional): If called iternally it is passed as
-                an argument. Defaults to None.
-            * lower_thresh: Value between 0 <= q <= 1, the percentile to
-                compute for the lower boundary value.
-            * upper_thresh: Value between 0 <= q <= 1, the percentile to
-                compute for the upper boundary value.
+        Parameters
+        ----------
+        _df : DataFrame, default None
+            If called iternally it is passed as an argument.
+        lower_thresh : float, between [0, 1], default 0.0
+            The percentile to compute for the lower boundary value.
+        upper_thresh : float, between [0, 1], default 0.0
+            The percentile to compute for the upper boundary value.
 
-        Returns:
-            pd.Series: The lower and upper bound
+        Returns
+        -------
+        Series
+            The lower and upper outlier boundaries.
         """
         if _df is None:
             _df = self._obj
             _df = _df.select_dtypes(exclude=['category', 'object'])
+        if (lower_thresh < 0 | lower_thresh > 1):
+            raise ValueError(
+                'Lower threshold should be within [0, 1]')
+        if (upper_thresh < 0 | upper_thresh > 1):
+            raise ValueError(
+                'Upper threshold should be within [0, 1]'
+            )
+
         lower_bound = _df.quantile(lower_thresh)
         upper_bound = _df.quantile(upper_thresh)
         return pd.Series({'lower': lower_bound, 'upper': upper_bound})
@@ -568,33 +637,42 @@ class BambooToolsSeriesAccessor:
 
     @staticmethod
     def _validate(obj) -> None:
-        """Validate that the passed object is a pandas Series
+        """
+        Validates if the passed object is a pandas Series
 
-        Args:
-            * obj: Object passed
+        Parameters
+        ----------
+        obj : Series
 
-        Raises:
-            AttributeError: Prompts the user that pd.Series should be used
+        Raises
+        ------
+        AttributeError
+            Raises error if the object is not a pandas Series.
         """
         if not isinstance(obj, pd.Series):
             raise AttributeError("Must be a pandas Series")
 
     def above(self, thresh: float,
               dropna: bool = False) -> Tuple[float, float]:
-        """Calculates the number of values and their percentage which are
+        """
+        Calculates the number of values and their percentage which are
         above a specific threshold.
 
-        Args:
-            * thresh (float): The threshold given by the user.
-            * dropna (bool, optional): If True drops the NULL records before
-                the calculation of percentage of NULL values. Hence the total
-                number of records equal to the number of non NULL values.
-                Defaults to False.
+        Parameters
+        ----------
+        thresh : float
+            The threshold given by the user.
+        dropna : bool, default False
+             If True drops the NULL records before the calculation of 
+             percentage of NULL values. Hence the total number of records
+             equal to the number of non NULL values.
 
-        Returns:
-            Tuple[float, float]: Counts and percentage of records above the
-                given threshold.
+        Returns
+        -------
+        Tuple[float, float]
+            Counts and percentage of records above the given threshold.
         """
+
         if dropna:
             values_above = self._obj > thresh
         else:
@@ -606,19 +684,23 @@ class BambooToolsSeriesAccessor:
 
     def below(self, thresh: float,
               dropna: bool = False) -> Tuple[float, float]:
-        """Calculates the number of values and their percentage which are
-        below a specific threshold.
+        """
+        Calculates the number of values and their percentage which are
+        beloq a specific threshold.
 
-        Args:
-            * thresh (float): The threshold given by the user.
-            * dropna (bool, optional): If True drops the NULL records before
-                the calculation of percentage of NULL values. Hence the total
-                number of records equal to the number of non NULL values.
-                Defaults to False.
+        Parameters
+        ----------
+        thresh : float
+            The threshold given by the user.
+        dropna : bool, default False
+             If True drops the NULL records before the calculation of 
+             percentage of NULL values. Hence the total number of records
+             equal to the number of non NULL values.
 
-        Returns:
-            Tuple[float, float]: Counts and percentage of records below the
-                given threshold.
+        Returns
+        -------
+        Tuple[float, float]
+            Counts and percentage of records below the given threshold.
         """
 
         if dropna:

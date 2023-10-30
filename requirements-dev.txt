@@ -3,3 +3,4 @@ pandas>=1.5.3
 twine
 seaborn
 build
+pre-commit==3.5.0

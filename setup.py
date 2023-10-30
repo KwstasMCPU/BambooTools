@@ -6,8 +6,7 @@ with open("README.md", "r") as f:
 project_urls = {
     'Documentation': 'https://github.com/KwstasMCPU/BambooTools',
     'Changelog': 'https://github.com/KwstasMCPU/BambooTools/releases',
-    'Source': 'https://github.com/KwstasMCPU/BambooTools'
-    }
+    'Source': 'https://github.com/KwstasMCPU/BambooTools'}
 
 setup(
     name='BambooTools',
@@ -20,12 +19,13 @@ setup(
     description='Pandas extension to enchance your data analysis.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    install_requires=[
-        "pandas>=1.5.3"
-        ],
-    extras_require={
-        "dev": ["pytest>=7.4.2", "twine", "seaborn", "build"]
-        },
+    install_requires=["pandas>=1.5.3"],
+    extras_require={"dev": ["pytest>=7.4.2",
+                            "twine",
+                            "seaborn",
+                            "build",
+                            "pre-commit==3.5.0"]
+                    },
     classifiers=["Development Status :: 4 - Beta",
                  "Programming Language :: Python :: 3",
                  "Intended Audience :: Developers",
