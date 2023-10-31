@@ -203,7 +203,7 @@ pip install -e ".[dev]"
 1. Fork the repository on GitHub.
 2. Clone the forked repository to your local machine.
 3. Make a new branch, from the `develop` branch for your feature or bug fix.
-4. Implement your changes. 
+4. Implement your changes.
    - It is recommended to write tests and examples for them in `tests\test_bambootols.py` and `bin\examples.py` respectively.
 1. Create a Pull Request. Link it to the issue you have opened.
 

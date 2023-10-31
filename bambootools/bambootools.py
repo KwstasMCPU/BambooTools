@@ -8,9 +8,9 @@ from itertools import combinations
 from typing import List, Tuple, Literal
 
 
-def _conditional_probability(data: pd.DataFrame,
-                             col_a: str,
-                             col_b: str) -> Tuple[float, float]:
+def _conditional_probability(
+    data: pd.DataFrame, col_a: str, col_b: str
+) -> Tuple[float, float]:
     """
     Calculates the probability of a column's value being NULL given the
     fact another's column value is NULL (conditional probability).
@@ -78,8 +78,7 @@ def _hash_table(df: pd.DataFrame, subset: List[str] = None) -> pd.Series:
         if not isinstance(subset, List):
             raise AttributeError("`subset` arg must be a list of strings")
 
-    hashed_series = pd.util.hash_pandas_object(df[subset],
-                                               index=False)
+    hashed_series = pd.util.hash_pandas_object(df[subset], index=False)
     return hashed_series
 
 
@@ -141,22 +140,25 @@ class BambooToolsDfAccessor:
             complete_values = self._obj.notnull()
             total_records = self._obj.shape[0]
             counts = complete_values.sum()
-            counts.name = 'complete values'
+            counts.name = "complete values"
             perce = complete_values.sum() / total_records
-            perce.name = 'completeness ratio'
+            perce.name = "completeness ratio"
             output = counts.to_frame().join(perce)
-            output['total'] = total_records
+            output["total"] = total_records
         else:
             if not isinstance(by, List):
                 raise AttributeError("`by` arg must be a list of strings")
 
-            output = self._obj.groupby(by, dropna=False).\
-                agg([('complete values', lambda x: x.notnull().sum()),
-                     ('completeness ratio',
-                      lambda x: x.notnull().sum() / x.shape[0]),
-                     ('total', 'size')
-                     ]
-                    )
+            output = self._obj.groupby(by, dropna=False).agg(
+                [
+                    ("complete values", lambda x: x.notnull().sum()),
+                    (
+                        "completeness ratio",
+                        lambda x: x.notnull().sum() / x.shape[0],
+                    ),
+                    ("total", "size"),
+                ]
+            )
         return output
 
     def missing_corr_matrix(self) -> pd.DataFrame:
@@ -187,9 +189,9 @@ class BambooToolsDfAccessor:
         for col_a, col_b in columns_pairs_comb:
             # calculate the conditional probabilities for each columns
             # pair
-            result = _conditional_probability(data=_df,
-                                              col_a=col_a,
-                                              col_b=col_b)
+            result = _conditional_probability(
+                data=_df, col_a=col_a, col_b=col_b
+            )
             if col_a in pairs_dict:
                 pairs_dict[col_a].update({col_b: result[0]})
             else:
@@ -242,20 +244,29 @@ class BambooToolsDfAccessor:
         n_unique_duplicate_records = (frequency_of_records > 1).sum()
         n_unique_non_duplicated_records = (frequency_of_records == 1).sum()
 
-        output = pd.DataFrame(index=['total records', 'unique records',
-                                     'unique records without duplications',
-                                     'unique records with duplications',
-                                     'total duplicated records'],
-                              columns=['counts'],
-                              data=[total_records, n_unique_records,
-                                    n_unique_non_duplicated_records,
-                                    n_unique_duplicate_records,
-                                    n_total_duplicate_records])
+        output = pd.DataFrame(
+            index=[
+                "total records",
+                "unique records",
+                "unique records without duplications",
+                "unique records with duplications",
+                "total duplicated records",
+            ],
+            columns=["counts"],
+            data=[
+                total_records,
+                n_unique_records,
+                n_unique_non_duplicated_records,
+                n_unique_duplicate_records,
+                n_total_duplicate_records,
+            ],
+        )
 
         return output
 
-    def duplication_frequency_table(self,
-                                    subset: List[str] = None) -> pd.DataFrame:
+    def duplication_frequency_table(
+        self, subset: List[str] = None
+    ) -> pd.DataFrame:
         """
         Generates a table which states the frequency of records with
         duplications. Categorizes the duplicated records according to their
@@ -293,37 +304,48 @@ class BambooToolsDfAccessor:
         hashed_series = _hash_table(_df, subset)
         del _df
 
-        frquency_table = hashed_series.value_counts().\
-            value_counts().\
-            sort_index().\
-            to_frame(name='frequency')
-        frquency_table['sum of duplications'] = (frquency_table['frequency'] *
-                                                 frquency_table.index
-                                                 )
-        frquency_table['n identical bins'] = pd.cut(frquency_table.index,
-                                                    bins=[2, 3, 4, 5, 6,
-                                                          10, 15, 50, np.inf],
-                                                    include_lowest=True,
-                                                    labels=['2', '3',
-                                                            '4', '5',
-                                                            '[6, 10)',
-                                                            '[10, 15)',
-                                                            '[15, 50)',
-                                                            '50>'],
-                                                    right=False)
-        frquency_table.dropna(subset=['n identical bins'], inplace=True)
+        frquency_table = (
+            hashed_series.value_counts()
+            .value_counts()
+            .sort_index()
+            .to_frame(name="frequency")
+        )
+        frquency_table["sum of duplications"] = (
+            frquency_table["frequency"] * frquency_table.index
+        )
+        frquency_table["n identical bins"] = pd.cut(
+            frquency_table.index,
+            bins=[2, 3, 4, 5, 6, 10, 15, 50, np.inf],
+            include_lowest=True,
+            labels=[
+                "2",
+                "3",
+                "4",
+                "5",
+                "[6, 10)",
+                "[10, 15)",
+                "[15, 50)",
+                "50>",
+            ],
+            right=False,
+        )
+        frquency_table.dropna(subset=["n identical bins"], inplace=True)
 
-        output = frquency_table.groupby(['n identical bins']).sum()
-        output['percentage to total duplications'] = (
-            output['sum of duplications'] /
-            output['sum of duplications'].sum())
+        output = frquency_table.groupby(["n identical bins"]).sum()
+        output["percentage to total duplications"] = (
+            output["sum of duplications"] / output["sum of duplications"].sum()
+        )
         return output
 
-    def outlier_bounds(self, method: Literal['std', 'iqr', 'percentiles'],
-                       std_n: float = 3.0, factor: float = 1.5,
-                       lower_thresh: float = 0.0, upper_thresh: float = 1.0,
-                       by: List['str'] = None
-                       ) -> pd.DataFrame:
+    def outlier_bounds(
+        self,
+        method: Literal["std", "iqr", "percentiles"],
+        std_n: float = 3.0,
+        factor: float = 1.5,
+        lower_thresh: float = 0.0,
+        upper_thresh: float = 1.0,
+        by: List["str"] = None,
+    ) -> pd.DataFrame:
         """
         Returns the outlier boundaries of the given dataframe for every
         numerical column. Outlier boundaries are defined as the values for
@@ -345,7 +367,7 @@ class BambooToolsDfAccessor:
             or upper the given percentiles.
 
         std_n : float, default 3.0
-            The number of standard deviations to be used in order to determine 
+            The number of standard deviations to be used in order to determine
             if a value is an outlier. Used in the `std` method.
         factor : float, default 1.5
             The factor of IQR to be used in order to determine if a value is
@@ -365,59 +387,70 @@ class BambooToolsDfAccessor:
         DataFrame
             The dataframe table with the boundaries per column.
         """
-        
+
         _df = self.pandas_obj.copy()
         # check if to group by per with any categorical column
         if by:
             # group by per categorical column
             if not isinstance(by, list):
                 raise AttributeError("`by` arg must be a list of strings")
-            cols = _df.select_dtypes(exclude=['category', 'object']).columns
+            cols = _df.select_dtypes(exclude=["category", "object"]).columns
             _df = _df.groupby(by)[cols]
             # select and call outlier method:
-            if method == 'std':
-                bounds = _df.apply(lambda group: group.apply(
-                    self._outlier_detector_std, std_n=std_n)).unstack()
-            if method == 'iqr':
-                bounds = _df.apply(lambda group: group.apply(
-                    self._outlier_detector_iqr, factor=factor)).unstack()
-            if method == 'percentiles':
-                bounds = _df.apply(lambda group: group.apply(
-                    self._outlier_detector_percentiles,
-                    lower_thresh=lower_thresh,
-                    upper_thresh=upper_thresh)).unstack()
+            if method == "std":
+                bounds = _df.apply(
+                    lambda group: group.apply(
+                        self._outlier_detector_std, std_n=std_n
+                    )
+                ).unstack()
+            if method == "iqr":
+                bounds = _df.apply(
+                    lambda group: group.apply(
+                        self._outlier_detector_iqr, factor=factor
+                    )
+                ).unstack()
+            if method == "percentiles":
+                bounds = _df.apply(
+                    lambda group: group.apply(
+                        self._outlier_detector_percentiles,
+                        lower_thresh=lower_thresh,
+                        upper_thresh=upper_thresh,
+                    )
+                ).unstack()
             return bounds
 
         else:
             # do not group by per any categorical column
             # select and call outlier method:
-            _df = _df.select_dtypes(exclude=['category', 'object'])
-            if method == 'std':
+            _df = _df.select_dtypes(exclude=["category", "object"])
+            if method == "std":
                 bounds = self._outlier_detector_std(_df, std_n)
-            if method == 'iqr':
+            if method == "iqr":
                 bounds = self._outlier_detector_iqr(_df, factor)
-            if method == 'percentiles':
-                bounds = self._outlier_detector_percentiles(_df,
-                                                            lower_thresh,
-                                                            upper_thresh
-                                                            )
-            return pd.DataFrame({'lower': bounds['lower'],
-                                 'upper': bounds['upper']
-                                 }
-                                )
+            if method == "percentiles":
+                bounds = self._outlier_detector_percentiles(
+                    _df, lower_thresh, upper_thresh
+                )
+            return pd.DataFrame(
+                {"lower": bounds["lower"], "upper": bounds["upper"]}
+            )
 
-    def outlier_summary(self, method: Literal['std', 'iqr', 'percentiles'],
-                        std_n: float = 3.0, factor: float = 1.5,
-                        lower_thresh: float = 0.0, upper_thresh: float = 1.0,
-                        by: List = None
-                        ) -> pd.DataFrame:
+    def outlier_summary(
+        self,
+        method: Literal["std", "iqr", "percentiles"],
+        std_n: float = 3.0,
+        factor: float = 1.5,
+        lower_thresh: float = 0.0,
+        upper_thresh: float = 1.0,
+        by: List = None,
+    ) -> pd.DataFrame:
         """
         Generates an outlier summary table. The outlier summary table produces
         metrics regarding the outliers values of the dataset. It uses different
         methods to define a values as an outlier.
-        
+
         Outlier summary table explained:
-        
+
             * n_outliers_upper: The number of outliers existing above the upper
             limit.
             * n_outliers_lower: The number of outliers existing below the lower
@@ -439,7 +472,7 @@ class BambooToolsDfAccessor:
             percentiles respectively.
             * `percentiles`: Detects as outliers, every value being below
             or upper the given percentiles.
-        
+
         std_n : float, default 3.0
             The number of standard deviations to be used in order to determine
             if a value is an outlier. Used in the `std` method.
@@ -461,71 +494,87 @@ class BambooToolsDfAccessor:
         DataFrame
             The outlier summary dataframe.
         """
-        
-        bounds = self.outlier_bounds(method, std_n, factor,
-                                     lower_thresh, upper_thresh, by)
+
+        bounds = self.outlier_bounds(
+            method, std_n, factor, lower_thresh, upper_thresh, by
+        )
         outlier_counts = {}
         _df = self.pandas_obj.copy()
-        cols = _df.select_dtypes(exclude=['category', 'object']).columns
+        cols = _df.select_dtypes(exclude=["category", "object"]).columns
         if by:
             # --> groupby summary table (group)
             for group in bounds.index:
                 for col in cols:
-                    lower_bound = bounds.loc[group, (col, 'lower')]
-                    upper_bound = bounds.loc[group, (col, 'upper')]
+                    lower_bound = bounds.loc[group, (col, "lower")]
+                    upper_bound = bounds.loc[group, (col, "upper")]
                     # Count the outliers below/above the lower/upper bounds
-                    lower_outliers = _df[((_df[by] == group).all(axis=1)
-                                          & (_df[col] < lower_bound))]
-                    upper_outliers = _df[((_df[by] == group).all(axis=1)
-                                          & (_df[col] > upper_bound))]
+                    lower_outliers = _df[
+                        (
+                            (_df[by] == group).all(axis=1)
+                            & (_df[col] < lower_bound)
+                        )
+                    ]
+                    upper_outliers = _df[
+                        (
+                            (_df[by] == group).all(axis=1)
+                            & (_df[col] > upper_bound)
+                        )
+                    ]
                     # count the non outliers
-                    non_outliers = _df[((_df[by] == group).all(axis=1)
-                                        & (_df[col] <= upper_bound)
-                                        & (_df[col] >= lower_bound))]
+                    non_outliers = _df[
+                        (
+                            (_df[by] == group).all(axis=1)
+                            & (_df[col] <= upper_bound)
+                            & (_df[col] >= lower_bound)
+                        )
+                    ]
                     # Store the counts in the dictionary
-                    outlier_counts[(group,
-                                    col,
-                                    'n_outliers_lower')] = len(lower_outliers)
-                    outlier_counts[(group,
-                                    col,
-                                    'n_outliers_upper')] = len(upper_outliers)
-                    outlier_counts[(group,
-                                    col,
-                                    'n_non_outliers')] = len(non_outliers)
+                    outlier_counts[(group, col, "n_outliers_lower")] = len(
+                        lower_outliers
+                    )
+                    outlier_counts[(group, col, "n_outliers_upper")] = len(
+                        upper_outliers
+                    )
+                    outlier_counts[(group, col, "n_non_outliers")] = len(
+                        non_outliers
+                    )
             # generate the summary table
             summary_tbl = pd.Series(outlier_counts).unstack()
         else:
             # --> non groupby summary table
-            _df = _df.select_dtypes(exclude=['category', 'object'])
-            lower_outliers = _df.lt(bounds['lower'], axis=1).sum()
-            upper_outliers = _df.gt(bounds['upper'], axis=1).sum()
+            _df = _df.select_dtypes(exclude=["category", "object"])
+            lower_outliers = _df.lt(bounds["lower"], axis=1).sum()
+            upper_outliers = _df.gt(bounds["upper"], axis=1).sum()
             # count the non outliers
-            non_outliers = (_df.le(bounds['upper'], axis=1)
-                            & _df.ge(bounds['lower'], axis=1)).sum()
+            non_outliers = (
+                _df.le(bounds["upper"], axis=1)
+                & _df.ge(bounds["lower"], axis=1)
+            ).sum()
             # concat all the series into one dataframe
-            summary_tbl = pd.concat([upper_outliers,
-                                     lower_outliers,
-                                     non_outliers], axis=1
-                                    ).rename(columns={
-                                        0: 'n_outliers_upper',
-                                        1: 'n_outliers_lower',
-                                        2: 'n_non_outliers'})
+            summary_tbl = pd.concat(
+                [upper_outliers, lower_outliers, non_outliers], axis=1
+            ).rename(
+                columns={
+                    0: "n_outliers_upper",
+                    1: "n_outliers_lower",
+                    2: "n_non_outliers",
+                }
+            )
         # add additional columns in the summary table
-        qry_total_outliers = 'n_outliers_upper + n_outliers_lower'
-        summary_tbl['n_total_outliers'] = summary_tbl.eval(qry_total_outliers)
-        qry_total_records = 'n_non_outliers + n_total_outliers'
-        summary_tbl['total_records'] = summary_tbl.eval(qry_total_records)
+        qry_total_outliers = "n_outliers_upper + n_outliers_lower"
+        summary_tbl["n_total_outliers"] = summary_tbl.eval(qry_total_outliers)
+        qry_total_records = "n_non_outliers + n_total_outliers"
+        summary_tbl["total_records"] = summary_tbl.eval(qry_total_records)
         return summary_tbl
 
-    def _outlier_detector_std(self,
-                              _df: pd.DataFrame = None,
-                              std_n: float = 3.0
-                              ) -> pd.Series:
+    def _outlier_detector_std(
+        self, _df: pd.DataFrame = None, std_n: float = 3.0
+    ) -> pd.Series:
         """
         Returns the upper and lower boundaries which are used to class a
         value as an outlier. The boundaries are caclulated as `std_n` times
         away from the mean.
-        
+
         Note: It is not suitable for data which do not follow normal
         distribution.
 
@@ -541,21 +590,20 @@ class BambooToolsDfAccessor:
         Series
             The lower and upper outlier boundaries.
         """
-        
+
         if _df is None:
             _df = self._obj
-            _df = _df.select_dtypes(exclude=['category', 'object'])
+            _df = _df.select_dtypes(exclude=["category", "object"])
         data_mean = _df.mean(numeric_only=True)
         data_std = _df.std(numeric_only=True)
         cut_off = data_std * std_n
         lower_bound = data_mean - cut_off
         upper_bound = data_mean + cut_off
-        return pd.Series({'lower': lower_bound, 'upper': upper_bound})
+        return pd.Series({"lower": lower_bound, "upper": upper_bound})
 
-    def _outlier_detector_iqr(self,
-                              _df: pd.DataFrame = None,
-                              factor: float = 1.5
-                              ) -> pd.Series:
+    def _outlier_detector_iqr(
+        self, _df: pd.DataFrame = None, factor: float = 1.5
+    ) -> pd.Series:
         """
         Returns the upper and lower boundaries which are used to class a
         value as an outlier. The boundaries are defined as the values, which
@@ -574,22 +622,24 @@ class BambooToolsDfAccessor:
         Series
             The lower and upper outlier boundaries.
         """
+
         if _df is None:
             _df = self._obj
-            _df = _df.select_dtypes(exclude=['category', 'object'])
+            _df = _df.select_dtypes(exclude=["category", "object"])
         q25 = _df.quantile(0.25)
         q75 = _df.quantile(0.75)
         iqr = q75 - q25
         cut_off = iqr * factor
         lower_bound = q25 - cut_off
         upper_bound = q75 + cut_off
-        return pd.Series({'lower': lower_bound, 'upper': upper_bound})
+        return pd.Series({"lower": lower_bound, "upper": upper_bound})
 
-    def _outlier_detector_percentiles(self,
-                                      _df: pd.DataFrame = None,
-                                      lower_thresh: float = 0.0,
-                                      upper_thresh: float = 1.0
-                                      ) -> pd.Series:
+    def _outlier_detector_percentiles(
+        self,
+        _df: pd.DataFrame = None,
+        lower_thresh: float = 0.0,
+        upper_thresh: float = 1.0,
+    ) -> pd.Series:
         """
         Returns the upper and lower boundaries which are used to class a
         value as an outlier. The boundaries are defined as the values
@@ -609,20 +659,18 @@ class BambooToolsDfAccessor:
         Series
             The lower and upper outlier boundaries.
         """
+
         if _df is None:
             _df = self._obj
-            _df = _df.select_dtypes(exclude=['category', 'object'])
-        if (lower_thresh < 0 | lower_thresh > 1):
-            raise ValueError(
-                'Lower threshold should be within [0, 1]')
-        if (upper_thresh < 0 | upper_thresh > 1):
-            raise ValueError(
-                'Upper threshold should be within [0, 1]'
-            )
+            _df = _df.select_dtypes(exclude=["category", "object"])
+        if lower_thresh < 0 | lower_thresh > 1:
+            raise ValueError("Lower threshold should be within [0, 1]")
+        if upper_thresh < 0 | upper_thresh > 1:
+            raise ValueError("Upper threshold should be within [0, 1]")
 
         lower_bound = _df.quantile(lower_thresh)
         upper_bound = _df.quantile(upper_thresh)
-        return pd.Series({'lower': lower_bound, 'upper': upper_bound})
+        return pd.Series({"lower": lower_bound, "upper": upper_bound})
 
 
 @pd.api.extensions.register_series_accessor("bbt")
@@ -649,11 +697,13 @@ class BambooToolsSeriesAccessor:
         AttributeError
             Raises error if the object is not a pandas Series.
         """
+
         if not isinstance(obj, pd.Series):
             raise AttributeError("Must be a pandas Series")
 
-    def above(self, thresh: float,
-              dropna: bool = False) -> Tuple[float, float]:
+    def above(
+        self, thresh: float, dropna: bool = False
+    ) -> Tuple[float, float]:
         """
         Calculates the number of values and their percentage which are
         above a specific threshold.
@@ -663,7 +713,7 @@ class BambooToolsSeriesAccessor:
         thresh : float
             The threshold given by the user.
         dropna : bool, default False
-             If True drops the NULL records before the calculation of 
+             If True drops the NULL records before the calculation of
              percentage of NULL values. Hence the total number of records
              equal to the number of non NULL values.
 
@@ -682,8 +732,9 @@ class BambooToolsSeriesAccessor:
 
         return count, perc
 
-    def below(self, thresh: float,
-              dropna: bool = False) -> Tuple[float, float]:
+    def below(
+        self, thresh: float, dropna: bool = False
+    ) -> Tuple[float, float]:
         """
         Calculates the number of values and their percentage which are
         beloq a specific threshold.
@@ -693,7 +744,7 @@ class BambooToolsSeriesAccessor:
         thresh : float
             The threshold given by the user.
         dropna : bool, default False
-             If True drops the NULL records before the calculation of 
+             If True drops the NULL records before the calculation of
              percentage of NULL values. Hence the total number of records
              equal to the number of non NULL values.
 
