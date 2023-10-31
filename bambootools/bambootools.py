@@ -331,7 +331,9 @@ class BambooToolsDfAccessor:
         )
         frquency_table.dropna(subset=["n identical bins"], inplace=True)
 
-        output = frquency_table.groupby(["n identical bins"]).sum()
+        output = frquency_table.groupby(
+            ["n identical bins"], observed=False
+        ).sum()
         output["percentage to total duplications"] = (
             output["sum of duplications"] / output["sum of duplications"].sum()
         )
