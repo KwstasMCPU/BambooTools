@@ -2,10 +2,11 @@
 :copyright: (c) 2023 by Maravegias Konstantinos.
 :license: MIT, see LICENSE for more details.
 """
-import pandas as pd
-import numpy as np
 from itertools import combinations
 from typing import List, Tuple, Literal
+
+import pandas as pd
+import numpy as np
 
 
 def _conditional_probability(

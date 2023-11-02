@@ -1,38 +1,46 @@
-from bambootools import bambootools
 import pandas as pd
 import numpy as np
 import seaborn as sns
 
-# Set a seed for reproducibility
-np.random.seed(0)
+from bambootools import bambootools
 
-# Define the number of records
-n_records = 50
 
-# Define the categories for the 'animal' column
-animals = ["cat", "dog", "lama"]
+def generate_dataset():
+    # Set a seed for reproducibility
+    np.random.seed(0)
 
-# Generate random data
-df = pd.DataFrame(
-    {
-        "animal": np.random.choice(animals, n_records),
-        "color": np.random.choice(
-            ["black", "white", "brown", "gray"], n_records
-        ),
-        "weight": np.random.randint(1, 100, n_records),
-        "tail length": np.random.randint(1, 50, n_records),
-        "height": np.random.randint(10, 500, n_records),
-        "date_of_observation": pd.date_range(
-            start="2022-01-01", end="2022-02-01", periods=n_records
-        ),
-    }
-)
+    # Define the number of records
+    n_records = 50
 
-# Insert NULL values in the 'animal', 'color', 'weight', 'tail length' and
-# 'height' columns
-for col, n_nulls in zip(df.columns, [2, 15, 20, 48, 17, 0]):
-    null_indices = np.random.choice(df.index, n_nulls, replace=False)
-    df.loc[null_indices, col] = np.nan
+    # Define the categories for the 'animal' column
+    animals = ["cat", "dog", "lama"]
+
+    # Generate random data
+    df = pd.DataFrame(
+        {
+            "animal": np.random.choice(animals, n_records),
+            "color": np.random.choice(
+                ["black", "white", "brown", "gray"], n_records
+            ),
+            "weight": np.random.randint(1, 100, n_records),
+            "tail length": np.random.randint(1, 50, n_records),
+            "height": np.random.randint(10, 500, n_records),
+            "date_of_observation": pd.date_range(
+                start="2022-01-01", end="2022-02-01", periods=n_records
+            ),
+        }
+    )
+
+    # Insert NULL values in the 'animal', 'color', 'weight', 'tail length' and
+    # 'height' columns
+    for col, n_nulls in zip(df.columns, [2, 15, 20, 48, 17, 0]):
+        null_indices = np.random.choice(df.index, n_nulls, replace=False)
+        df.loc[null_indices, col] = np.nan
+
+    return df
+
+
+df = generate_dataset()
 
 # get dataset's completeness for each column
 print(df.bbt.completeness())
