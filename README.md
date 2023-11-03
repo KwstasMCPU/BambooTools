@@ -6,7 +6,7 @@ With BambooTools, you can easily identify and handle outliers in your data, enab
 
 ## Installation
 
-Install from PiPy
+Install from PyPi
 
 ```bash
 pip install BambooTools
