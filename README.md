@@ -6,7 +6,7 @@ With BambooTools, you can easily identify and handle outliers in your data, enab
 
 ## Installation
 
-Install from PiPy
+Install from PyPi
 
 ```bash
 pip install BambooTools
@@ -44,30 +44,29 @@ df = pd.DataFrame({'Animal': ['Falcon', 'Falcon',
 # check the completeness of the dataset per column
 print(df.bbt.completeness())
 ```
-|           | perc               | count | total |
-|-----------|--------------------|-------|-------|
-| Animal    | 1.0                | 6     | 6     |
-| Max Speed | 0.6666666666666666 | 4     | 6     |
-| Weight    | 0.6666666666666666 | 4     | 6     |
+|           | complete values | completeness ratio | total |
+|-----------|-----------------|--------------------|-------|
+| Animal    | 6               | 1.0                | 6     |
+| Max Speed | 4               | 0.6666666666666666 | 6     |
+| Weight    | 4               | 0.6666666666666666 | 6     |
 
 Specifying a list of categorical columns would result the completeness per category:
 ```python
 # check the completeness of the datataset per category
 print(df.bbt.completeness(by=['Animal']))
 ```
-|        | Max Speed   |           |           | Weight      |        |        |
-|--------|-------------|-----------|-----------|-------------|--------|--------|
-| Animal | perc        | count     | total     | perc        | count  | total  |
-|        |             |           |           |             |        |        |
-| Falcon | 0.666666667 | 2         | 3         | 0.666666667 | 2      | 3      |
-| Lama   | 0           | 0         | 1         | 1           | 1      | 1      |
-| Parrot | 1           | 2         | 2         | 0.5         | 1      | 2      |
+|        | Max Speed       |                    |       | Weight          |                    |       |
+|--------|-----------------|--------------------|-------|-----------------|--------------------|-------|
+| Animal | complete values | completeness ratio | total | complete values | completeness ratio | total |
+| Falcon | 2               | 0.6666666666666666 | 3     | 2               | 0.6666666666666666 | 3     |
+| Lama   | 0               | 0.0                | 1     | 1               | 1.0                | 1     |
+| Parrot | 2               | 1.0                | 2     | 1               | 0.5                | 2     |
 
 ## Missing values correlation matrix
 `missing_corr_matrix()` This matrix aims to help to pintpoint relationships between missing values of different columns. Calculates
-the conditional probability of a column's value being NaN, given the fact another column value is NaN.
+the conditional probability of a record's value being NaN in a specific column, given the fact another value for the same record is missing at a different column.
 
-For a dataset with two columns `'A', 'B'` the conditional probability of a value from column `'A'` being NaN is:
+For a dataset with two columns `'A', 'B'` the conditional probability of a record having a missing value at column `'A'` is:
 
 $$P(A \text{ is NULL } | B \text{ is NULL}) = \frac{P(A \text{ is NULL } \cap B \text{ is NULL})}{P(B \text{ is NULL})}$$
 
@@ -174,6 +173,45 @@ print(penguins.bbt.outlier_bounds(method='iqr', by=['sex', 'species'], factor=1)
 | **Male**   | **Adelie**    | 36.5           | 44             | 17.4          | 20.7          | 181               | 205               | 3300        | 4800        |
 | **Male**   | **Chinstrap** | 48.125         | 53.9           | 17.8          | 20.8          | 189               | 210               | 3362.5      | 4468.75     |
 | **Male**   | **Gentoo**    | 45.7           | 52.9           | 14.3          | 17            | 211               | 232               | 4900        | 6100        |
+
+## Duplication summary
+
+`duplication_summary()` returns metrics regarding the duplicate records of the given dataset. It states the number of total rows, unique rows, unique rows without duplications, unique records with duplications and total duplicated records:
+
+```python
+print(penguins.bbt.duplication_summary(subset=['sex',
+                                               'species',
+                                               'island']))
+```
+|                                     | counts |
+|-------------------------------------|--------|
+| total records                       | 344    |
+| unique records                      | 13     |
+| unique records without duplications | 1      |
+| unique records with duplications    | 12     |
+| total duplicated records            | 343    |
+
+## Duplication frequency table
+`duplication_frequency_table` generates a table which states the frequency of records with duplications. Categorizes the duplicated records according to their number of duplications, and reports the frequency of those categories.
+
+In the example below, we notice that there are 2 cases of 5 identical records.
+
+```python
+print(penguins.bbt.duplication_frequency_table(subset=['sex',
+                                                       'species',
+                                                       'island']))
+```
+| n identical bins | frequency | sum of duplications | percentage to total duplications |
+|------------------|-----------|---------------------|----------------------------------|
+| 2                | 0         | 0                   | 0                                |
+| 3                | 0         | 0                   | 0                                |
+| 4                | 0         | 0                   | 0                                |
+| 5                | 2         | 10                  | 0.029154519                      |
+| [6, 10)          | 0         | 0                   | 0                                |
+| [10, 15)         | 0         | 0                   | 0                                |
+| [15, 50)         | 8         | 214                 | 0.623906706                      |
+| 50>              | 2         | 119                 | 0.346938776                      |
+
 # Contributing
 
 Contributions are more than welcome! You can contribute with several ways:
@@ -182,21 +220,27 @@ Contributions are more than welcome! You can contribute with several ways:
 * Recommendations for new features and implementation of those
 * Writing and or improving existing tests, to ensure quality
 
-Prior any contributions, opening an issue is recommended.
+**Prior yout contribution, opening an issue is recommended.**
 
 It is also recommended to install the package in ["development mode"](https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#working-in-development-mode) while working on it. *When installed as editable, a project can be edited in-place without reinstallation.*
 
-To install a Python package in "editable"/"development" mode change directory to the root of the project directory and run:
+To install the Python package in "editable"/"development" mode, change directory to the root of the project directory and run:
 
 ```bash
 pip install -e .
 pip install -r requirements-dev.txt # this will install the development dependencies (e.g. pytest)
 ```
 
-In order to install the package and the development dependencies with a one liner, run the below:
+OR in order to install the package and the development dependencies with a one liner, run the below:
 
 ```bash
 pip install -e ".[dev]"
+```
+
+To ensure that the development workflow is followed, please also setup the pre-commit hooks:
+
+```bash
+pre-commit install
 ```
 
 ## General Guidelines
@@ -204,9 +248,9 @@ pip install -e ".[dev]"
 1. Fork the repository on GitHub.
 2. Clone the forked repository to your local machine.
 3. Make a new branch, from the `develop` branch for your feature or bug fix.
-4. Implement your changes. 
+4. Implement your changes.
    - It is recommended to write tests and examples for them in `tests\test_bambootols.py` and `bin\examples.py` respectively.
-1. Create a Pull Request. Link it to the issue you have opened.
+5. Create a Pull Request. Link it to the issue you have opened.
 
 # Credits
 
