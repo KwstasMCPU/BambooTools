@@ -1,7 +1,7 @@
 # This workflow will build and test the BambooTools package when a push is made. It will
-# only publish to PiPy if a new tag is found
+# only publish to PyPi if a new tag is found
 
-name: Publish and test Python package to PiPy
+name: Publish and test Python package to PyPi
 
 on: push
 
