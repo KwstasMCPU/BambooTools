@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v.0.4.0-beta] - 2023-10-31
+## [v.0.4.0-beta] - 2023-11-04
 
 ### Added
 
@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 - renamed the output columns of `completeness()`:
   - `'perc': 'completeness ratio'`
   - `'count': 'complete values'`
+- `format` argument of `completeness()` method has been depreciated.
 - `_conditional_probability()` internal class method converted to a standalone internal function.
 - Docstring style finalized to `numpy`.
 
