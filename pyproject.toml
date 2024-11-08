@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "BambooTools"
+version = "0.4.0"
+description = "Pandas extension to enhance your data analysis."
+authors = ["Konstantinos Maravegias <kwstas.maras@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/KwstasMCPU/BambooTools"
+repository = "https://github.com/KwstasMCPU/BambooTools"
+documentation = "https://github.com/KwstasMCPU/BambooTools"
+keywords = ["BambooTools", "pandas", "pandas extensions", "data analysis", "data science", "analytics"]
+packages = [
+    { include = "bambootools" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pandas = ">=1.5.3"
+seaborn = "^0.13.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+isort = "^5.13.2"
+pytest = "^8.2.2"
+pre-commit = ">=2.9.3,<3.0.0"  # Ensure compatibility with Python 3.8
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+atomic = true
+indent = "    "
+line_length = 100
+lines_after_imports = 2

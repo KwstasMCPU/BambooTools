@@ -1,9 +1,9 @@
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
 import seaborn as sns
 
-from bambootools import bambootools
+import bambootools  # noqa: F401
 
 
 @pytest.fixture
@@ -23,9 +23,7 @@ def animals_dataset():
             "animal": np.random.choice(animals, n_records),
             "weight": np.random.randint(1, 100, n_records),
             "tail length": np.random.randint(1, 100, n_records),
-            "color": np.random.choice(
-                ["black", "white", "brown", "gray"], n_records
-            ),
+            "color": np.random.choice(["black", "white", "brown", "gray"], n_records),
             "name": [f"name_{i}" for i in range(n_records)],
         }
     )
@@ -42,11 +40,9 @@ def penguins_dataset():
     return sns.load_dataset("penguins")
 
 
-# tests for BambooToolsDfAccessor
+# # tests for BambooToolsDfAccessor
 def test_init_dataframe(animals_dataset):
-    assert animals_dataset.equals(
-        animals_dataset.bbt.pandas_obj
-    ), "Expected equal dataframe."
+    assert animals_dataset.equals(animals_dataset.bbt.pandas_obj), "Expected equal dataframe."
 
 
 def test_completeness(animals_dataset):
@@ -63,9 +59,7 @@ def test_completeness(animals_dataset):
 def test_completeness_per_group(animals_dataset):
     result = animals_dataset.bbt.completeness(by=["animal"])
     assert result.shape == (3, 12), "Wrong table dimensions."
-    assert (
-        result["weight"]["completeness ratio"].max() <= 1.0
-    ), "Max value of perc cannot exceed 1."
+    assert result["weight"]["completeness ratio"].max() <= 1.0, "Max value of perc cannot exceed 1."
     # test if the counts were calculated correctly
     n_cats = animals_dataset["animal"].value_counts()["cat"]
     assert (
@@ -83,9 +77,7 @@ def test_missing_corr_matrix(animals_dataset):
 
 
 def test_outlier_summary(penguins_dataset):
-    result = penguins_dataset.bbt.outlier_summary(
-        method="iqr", by=["sex", "species"]
-    )
+    result = penguins_dataset.bbt.outlier_summary(method="iqr", by=["sex", "species"])
     assert result.shape == (24, 5), "Shape should be (24, 5). sex*species."
     assert result["n_outliers_lower"].sum() == 8, "N of outliers should be 8."
     # test if the counts were calculated correctly
@@ -99,9 +91,7 @@ def test_outlier_summary(penguins_dataset):
 def test_duplication_summary(penguins_dataset):
     subset = ["sex", "species", "island"]
     result = penguins_dataset.bbt.duplication_summary(subset=subset)
-    total_duplicates = penguins_dataset.duplicated(
-        subset=subset, keep=False
-    ).sum()
+    total_duplicates = penguins_dataset.duplicated(subset=subset, keep=False).sum()
     assert result.shape == (5, 1), "Shape should be 5, 1."
     assert (
         result.loc["total records"].item() == penguins_dataset.shape[0]

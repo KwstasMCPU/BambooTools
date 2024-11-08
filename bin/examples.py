@@ -1,11 +1,11 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 import seaborn as sns
 
-from bambootools import bambootools
+import bambootools  # noqa: F401
 
 
-def generate_dataset():
+def generate_dataset() -> pd.DataFrame:
     # Set a seed for reproducibility
     np.random.seed(0)
 
@@ -19,9 +19,7 @@ def generate_dataset():
     df = pd.DataFrame(
         {
             "animal": np.random.choice(animals, n_records),
-            "color": np.random.choice(
-                ["black", "white", "brown", "gray"], n_records
-            ),
+            "color": np.random.choice(["black", "white", "brown", "gray"], n_records),
             "weight": np.random.randint(1, 100, n_records),
             "tail length": np.random.randint(1, 50, n_records),
             "height": np.random.randint(10, 500, n_records),
@@ -59,19 +57,13 @@ print(penguins.bbt.outlier_bounds(method="std", by=["sex", "species"]))
 print(penguins.bbt.outlier_summary(method="std"))
 
 # outliers summary per group
-print(
-    penguins.bbt.outlier_summary(method="iqr", by=["sex", "species"], factor=1)
-)
+print(penguins.bbt.outlier_summary(method="iqr", by=["sex", "species"], factor=1))
 
 # get duplication summary
 print(penguins.bbt.duplication_summary(subset=["sex", "species", "island"]))
 
 # get duplication frequency table
-print(
-    penguins.bbt.duplication_frequency_table(
-        subset=["sex", "species", "island"]
-    )
-)
+print(penguins.bbt.duplication_frequency_table(subset=["sex", "species", "island"]))
 
 # find how many values and their percentage which are above a threshold
 print(df["weight"].bbt.above(thresh=30))
