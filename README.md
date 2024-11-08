@@ -222,19 +222,10 @@ Contributions are more than welcome! You can contribute with several ways:
 
 **Prior yout contribution, opening an issue is recommended.**
 
-It is also recommended to install the package in ["development mode"](https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#working-in-development-mode) while working on it. *When installed as editable, a project can be edited in-place without reinstallation.*
-
-To install the Python package in "editable"/"development" mode, change directory to the root of the project directory and run:
+Poetry is used to manage the enviroment and the dependencies. To install the package and the development dependencies. Run the below:
 
 ```bash
-pip install -e .
-pip install -r requirements-dev.txt # this will install the development dependencies (e.g. pytest)
-```
-
-OR in order to install the package and the development dependencies with a one liner, run the below:
-
-```bash
-pip install -e ".[dev]"
+poetry install
 ```
 
 To ensure that the development workflow is followed, please also setup the pre-commit hooks:
