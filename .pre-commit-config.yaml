@@ -1,4 +1,4 @@
-default_stages: [ commit ]
+default_stages: [ pre-commit ]
 fail_fast: false
 
 default_language_version:
@@ -9,11 +9,11 @@ repos:
     rev: v4.6.0
     hooks:
       - id: check-merge-conflict
-        stages: [ commit ]
+        stages: [ pre-commit ]
       - id: check-merge-conflict
         args:
           - --assume-in-merge
-        stages: [ push ]
+        stages: [ pre-push ]
       - id: check-yaml
       - id: check-toml
       - id: no-commit-to-branch
